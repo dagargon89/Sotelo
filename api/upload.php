@@ -23,22 +23,16 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 // ==========================================
 
 $UNIT_YIELDS = [
-    'F-002' => 2.37341, 'F-003' => 2.37341, 'F-004' => 2.37341, 'F-005' => 2.37341,
-    'F-006' => 2.37341, 'F-007' => 2.37341, 'F-008' => 2.37341, 'F-009' => 2.37341,
-    'F-010' => 2.37341, 'F-011' => 2.37341, 'F-012' => 2.37341, 'F-013' => 2.37341,
-    'F-014' => 2.37341, 'F-015' => 2.37341, 'F-016' => 2.37341, 'F-017' => 2.37341,
-    'F-019' => 2.37341, 'F-050' => 2.37341, 'F-060' => 2.37341, 'F-061' => 2.37341,
-    'F-086' => 2.37341, 'F-087' => 2.37341, 'F-088' => 2.37341, 'F-089' => 2.37341,
-    'F-090' => 2.37341, 'F-091' => 2.37341, 'F-092' => 2.37341, 'F-097' => 2.37341,
-    'F-098' => 2.37341, 'F-099' => 2.37341, 'F-107' => 2.37341, 'F-108' => 2.37341,
-    'F-110' => 2.37341,
-    'F-021' => 2.45098, 'F-022' => 2.45098, 'F-023' => 2.45098, 'F-024' => 2.45098,
-    'F-025' => 2.45098, 'F-026' => 2.45098, 'F-027' => 2.45098, 'F-028' => 2.45098,
-    'F-029' => 2.45098, 'F-030' => 2.45098, 'F-031' => 2.45098, 'F-033' => 2.45098,
-    'F-040' => 2.45098, 'F-042' => 2.45098,
-    'F-034' => 2.60127, 'F-035' => 2.60127, 'F-036' => 2.60127,
-    'F-045' => 2.11267, 'F-051' => 2.11267, 'F-059' => 2.11267, 'F-069' => 2.11267,
-    'F-074' => 2.11267, 'F-082' => 2.11267, 'F-100' => 2.11267,
+    'F-002' => 2.37341, 'F-003' => 2.37341, 'F-004' => 2.37341, 'F-005' => 2.37341, 'F-006' => 2.37341, 'F-007' => 2.37341, 
+    'F-008' => 2.37341, 'F-009' => 2.37341, 'F-010' => 2.37341, 'F-011' => 2.37341, 'F-012' => 2.37341, 'F-013' => 2.37341, 
+    'F-014' => 2.37341, 'F-015' => 2.37341, 'F-016' => 2.37341, 'F-017' => 2.37341, 'F-019' => 2.37341, 'F-021' => 2.45098, 
+    'F-022' => 2.45098, 'F-023' => 2.45098, 'F-024' => 2.45098, 'F-025' => 2.45098, 'F-026' => 2.45098, 'F-027' => 2.45098, 
+    'F-028' => 2.45098, 'F-029' => 2.45098, 'F-030' => 2.45098, 'F-031' => 2.45098, 'F-040' => 2.45098, 'F-033' => 2.45098, 
+    'F-034' => 2.60127, 'F-035' => 2.60127, 'F-036' => 2.60127, 'F-045' => 2.11267, 'F-042' => 2.45098, 'F-050' => 2.37341, 
+    'F-051' => 2.11267, 'F-059' => 2.11267, 'F-060' => 2.37341, 'F-061' => 2.37341, 'F-069' => 2.11267, 'F-074' => 2.11267, 
+    'F-082' => 2.11267, 'F-086' => 2.37341, 'F-087' => 2.37341, 'F-088' => 2.37341, 'F-089' => 2.37341, 'F-090' => 2.37341, 
+    'F-091' => 2.37341, 'F-092' => 2.37341, 'F-097' => 2.37341, 'F-098' => 2.37341, 'F-099' => 2.37341, 'F-100' => 2.11267, 
+    'F-107' => 2.37341, 'F-108' => 2.37341, 'F-110' => 2.37341, 
     'F-111' => 2.701058, 'F-112' => 2.701058, 'F-121' => 2.701058,
 ];
 
@@ -95,42 +89,50 @@ $ROUTE_DISTANCES_CLIENTS = [
     'BASE SOTELO CHIHUAHUA|FLETES SOTELO' => 375,
     'BASE SOTELO CHIHUAHUA|PRECOS ZARAGOZA' => 375,
     'BASE SOTELO CHIHUAHUA|YARDA DEL SIETE' => 375,
-    'BASE SOTELO CHIHUAHUA|APTIV MOCHIS FV59' => 1363,
-    'BASE SOTELO CHIHUAHUA|APTIV RIO BRAVO 4 FV33' => 375,
-    'BASE SOTELO CHIHUAHUA|GYSA JUAREZ JDC' => 375,
-    'BASE SOTELO CHIHUAHUA|GYSA OBREGON PDC' => 1131,
     'DTR|PRECOS ZARAGOZA' => 375,
     'DTR|FLETES SOTELO' => 375,
     'GYSA OBREGON 2|FLETES SOTELO' => 1021,
-    'GYSA OBREGON 2|GYSA ETCHOJOA' => 97,
     'IMPULSORA GANE|FLETES SOTELO' => 375,
     'NORDAM|FLETES SOTELO' => 375,
     'NORDAM|PRECOS ZARAGOZA' => 375,
     'PACTIV DE MEXICO S. DE R.L DE C.V.|FLETES SOTELO' => 375,
     'SAFRAN PLANTA 3/OSM/OXYGEN SYSTEMS|FLETES SOTELO' => 375,
     'SAFRAN PLANTA 3 /WWM/ WATER & WASTE MEX (MONOGRAM)|FLETES SOTELO' => 375,
-    'SAFRAN PLANTA 1 /EMX/ EVACUATION SY (AIR CRUSIERS)|FLETES SOTELO' => 375,
     'SMTC PLANTA 1|FLETES SOTELO' => 375,
     'THUASNE MX|FLETES SOTELO' => 375,
     'XOMOX CHIHUAHUA S.A DE C.V.|FLETES SOTELO' => 375,
     'YARDA SOTELO OBREGON|FLETES SOTELO' => 1021,
     'YARDA SOTELO OBREGON|PRECOS ZARAGOZA' => 1021,
-    'YARDA SOTELO OBREGON|GYSA BACUM' => 45,
-    'YARDA SOTELO OBREGON|GYSA ETCHOJOA' => 97,
-    'YARDA SOTELO OBREGON|GYSA  CDJ' => 1021,
     'YAZAKI COMPONENTES PLANTA 3|FLETES SOTELO' => 375,
-    'YAZAKI COMPONENTES PLANTA 3|GYSA JUAREZ JDC' => 1131,
-    'YAZAKI COMPONENTES PLANTA 3|GYSA OBREGON PDC' => 1131,
     'APTIV MOCHIS FV59|YARDA SOTELO OBREGON' => 232,
-    'APTIV MOCHIS FV59|APTIV GUAMUCHIL FV52' => 106,
-    'APTIV / RIO BRAVO 7 FV32|APTIV GUAMUCHIL FV52' => 1330,
     'DEMINSA SA DE CV|YARDA SOTELO OBREGON' => 255,
     'FLETES SOTELO|APTIV GUAMUCHIL FV52' => 1330,
-    'FLETES SOTELO|APTIV MOCHIS FV59' => 1224,
     'FLETES SOTELO|BASE SOTELO CHIHUAHUA' => 375,
     'FLETES SOTELO|IMPULSORA GANE' => 375,
     'FLETES SOTELO|YARDA SOTELO OBREGON' => 1021,
     'FLETES SOTELO|YAZAKI COMPONENTES PLANTA 3' => 375,
+    'GYSA  CDJ|FLETES SOTELO' => 375,
+    'GYSA BACUM|GYSA OBREGON PDC' => 45,
+    'GYSA BACUM|YARDA SOTELO OBREGON' => 45,
+    'GYSA ETCHOJOA|GYSA OBREGON PDC' => 97,
+    'GYSA NAVOJOA|GYSA OBREGON ODC' => 67,
+    'GYSA NAVOJOA|GYSA OBREGON PDC' => 67,
+    'GYSA NAVOJOA|YARDA SOTELO OBREGON' => 67,
+    'GYSA OBREGON ODC|GYSA BACUM' => 45,
+    'YARDA SOTELO OBREGON|GYSA BACUM' => 45,
+    'GYSA OBREGON ODC|GYSA ETCHOJOA' => 97,
+    'GYSA OBREGON ODC|GYSA NAVOJOA' => 67,
+    'SAFRAN PLANTA 1 /EMX/ EVACUATION SY (AIR CRUSIERS)|FLETES SOTELO' => 375,
+    'YARDA SOTELO OBREGON|GYSA ETCHOJOA' => 97,
+    'APTIV / RIO BRAVO 7 FV32|APTIV GUAMUCHIL FV52' => 1330,
+    'APTIV MOCHIS FV59|APTIV GUAMUCHIL FV52' => 106,
+    'BASE SOTELO CHIHUAHUA|APTIV MOCHIS FV59' => 1363,
+    'BASE SOTELO CHIHUAHUA|APTIV RIO BRAVO 4 FV33' => 375,
+    'BASE SOTELO CHIHUAHUA|GYSA JUAREZ JDC' => 375,
+    'BASE SOTELO CHIHUAHUA|GYSA OBREGON PDC' => 1131,
+    'COFICAB LEON, S. DE R.L. DE C.V. / PLANTA JUAREZ|TE CONNECTIVITY HERMOSILLO' => 800,
+    'COFICAB LEON, S. DE R.L. DE C.V. / PLANTA JUAREZ|GYSA OBREGON PDC' => 1021,
+    'FLETES SOTELO|APTIV MOCHIS FV59' => 1224,
     'FLETES SOTELO|GYSA ASCENCION' => 200,
     'FLETES SOTELO|GYSA BACUM' => 1004,
     'FLETES SOTELO|GYSA ETCHOJOA' => 1118,
@@ -138,33 +140,54 @@ $ROUTE_DISTANCES_CLIENTS = [
     'FLETES SOTELO|GYSA OBREGON 2' => 1021,
     'FLETES SOTELO|GYSA OBREGON PDC' => 1021,
     'FLETES SOTELO|HUNGAROS / NOGALES' => 600,
-    'FLETES SOTELO|ARNPRIOR AEROSPACE CHIHUAHUA' => 375,
-    'FLETES SOTELO|CESSNA PLANTA 4.1' => 375,
-    'GYSA  CDJ|FLETES SOTELO' => 375,
     'GYSA  CDJ|YARDA SOTELO OBREGON' => 1021,
     'GYSA BACUM|GYSA NAVOJOA' => 112,
     'GYSA BACUM|GYSA OBREGON (CDO2)' => 45,
     'GYSA BACUM|GYSA OBREGON 2' => 45,
     'GYSA BACUM|GYSA OBREGON ODC' => 45,
-    'GYSA BACUM|GYSA OBREGON PDC' => 45,
-    'GYSA BACUM|YARDA SOTELO OBREGON' => 45,
     'GYSA ETCHOJOA|FLETES SOTELO' => 1118,
     'GYSA ETCHOJOA|GYSA  CDJ' => 1118,
     'GYSA ETCHOJOA|GYSA OBREGON ODC' => 97,
-    'GYSA ETCHOJOA|GYSA OBREGON PDC' => 97,
     'GYSA JUAREZ JDC|GYSA OBREGON 2' => 1021,
-    'GYSA NAVOJOA|GYSA OBREGON ODC' => 67,
-    'GYSA NAVOJOA|GYSA OBREGON PDC' => 67,
-    'GYSA NAVOJOA|YARDA SOTELO OBREGON' => 67,
-    'GYSA OBREGON ODC|GYSA BACUM' => 45,
-    'GYSA OBREGON ODC|GYSA ETCHOJOA' => 97,
-    'GYSA OBREGON ODC|GYSA NAVOJOA' => 67,
+    'GYSA OBREGON 2|GYSA ETCHOJOA' => 97,
     'GYSA OBREGON PDC|GYSA BACUM' => 45,
     'GYSA OBREGON PDC|GYSA ETCHOJOA' => 97,
     'GYSA OBREGON PDC|GYSA NAVOJOA' => 67,
-    'COFICAB LEON, S. DE R.L. DE C.V. / PLANTA JUAREZ|TE CONNECTIVITY HERMOSILLO' => 800,
-    'COFICAB LEON, S. DE R.L. DE C.V. / PLANTA JUAREZ|GYSA OBREGON PDC' => 1021,
     'TRANSERVICIOS CHIHUAHUA|TRANSERVICIOS CD JUAREZ' => 375,
+    'YARDA SOTELO OBREGON|GYSA  CDJ' => 1021,
+    'YAZAKI COMPONENTES PLANTA 3|GYSA JUAREZ JDC' => 1131,
+    'YAZAKI COMPONENTES PLANTA 3|GYSA OBREGON PDC' => 1131,
+    'FLETES SOTELO|ARNPRIOR AEROSPACE CHIHUAHUA' => 375,
+    'FLETES SOTELO|CESSNA PLANTA 4.1' => 375,
+    'FLETES SOTELO|DEMINSA SA DE CV' => 800,
+    'FLETES SOTELO|DTR' => 375,
+    'FLETES SOTELO|FOKKER' => 375,
+    'FLETES SOTELO|SAFRAN CABIN' => 375,
+    'FLETES SOTELO|SAFRAN PLANTA 1 /EMX/ EVACUATION SY (AIR CRUSIERS)' => 375,
+    'FLETES SOTELO|SMTC PLANTA 1' => 375,
+    'FLETES SOTELO|SOUTHCO.' => 375,
+    'FLETES SOTELO|XOMOX CHIHUAHUA S.A DE C.V.' => 375,
+    'FLETES SOTELO|XYLEM' => 375,
+    'FLETES SOTELO|YAZAKI COMPONENTES PLANTA 2' => 375,
+    'FREIG CARRILLO / NOGALES AZ|GYSA  CDJ' => 800,
+    'PRECOS ZARAGOZA|BASE SOTELO CHIHUAHUA' => 375,
+    'PRECOS ZARAGOZA|DTR' => 375,
+    'PRECOS ZARAGOZA|FOKKER' => 375,
+    'PRECOS ZARAGOZA|SAFRAN CABIN' => 375,
+    'PRECOS ZARAGOZA|SAFRAN PLANTA 1 /EMX/ EVACUATION SY (AIR CRUSIERS)' => 375,
+    'PRECOS ZARAGOZA|SAFRAN PLANTA 3 /WWM/ WATER & WASTE MEX (MONOGRAM)' => 375,
+    'PRECOS ZARAGOZA|SAFRAN PLANTA 5 / ELM / ELECTRIC MEXICO (SEPS)' => 375,
+    'PRECOS ZARAGOZA|SAFRAN PLANTA 5 / LSM/ LIGHTING SOLUTIONS (IDD)' => 375,
+    'PRECOS ZARAGOZA|SMTC PLANTA 1' => 375,
+    'PRECOS ZARAGOZA|SOUTHCO.' => 375,
+    'PRECOS ZARAGOZA|WIREMASTERS' => 375,
+    'PRECOS ZARAGOZA|XYLEM' => 375,
+    'PRECOS ZARAGOZA|YAZAKI COMPONENTES PLANTA 2' => 375,
+    'CASETA DE VILLA AHUMADA|PRECOS ZARAGOZA' => 130,
+    'CENTURY MOLD MEXICO S DE RL DE CV|FLETES SOTELO' => 375,
+    'CESSNA PLANTA 4.1|BASE SOTELO CHIHUAHUA' => 375,
+    'GYSA JUAREZ JDC|BASE SOTELO CHIHUAHUA' => 375,
+    'YARDA SOTELO OBREGON|GYSA NAVOJOA' => 67,
 ];
 
 $PACIFICO_KEYWORDS = [
@@ -295,6 +318,7 @@ function calculate_chihuahua_payroll(array $trips, string $driver_name): array {
         $base_pay    = 0.0;
         $leg_details = [];
         $legs_data   = [];
+        $has_foraneo = false;
 
         // Pass 1: base pay per leg
         foreach ($trip as $row) {
@@ -305,12 +329,16 @@ function calculate_chihuahua_payroll(array $trips, string $driver_name): array {
             $coments  = strtoupper(trim($row['Comentarios']   ?? ''));
 
             $is_loaded = ($status === 'FACTURADO')
-                      || in_array($tipo, ['IMP-02', 'EXP-02', 'FOR-02', 'MDC-01', 'TRI-02', 'TRE-02'], true);
+                      || in_array($tipo, ['IMP-01', 'IMP-02', 'EXP-01', 'EXP-02', 'FOR-01', 'FOR-02', 'MDC-01', 'MDC-02', 'TRI-01', 'TRI-02', 'TRE-01', 'TRE-02', 'LOC-01', 'LOC-02'], true);
             if (strpos($coments, 'VACIO') !== false
              || strpos($coments, 'VASIO') !== false
              || $status === 'COMPLETO'
-             || $tipo   === 'PTT-00') {
+             || $tipo   === 'PTT-00' || $tipo === 'LOC-00' || $tipo === 'FOR-00' || $tipo === 'IMP-00' || $tipo === 'EXP-00') {
                 $is_loaded = false;
+            }
+
+            if (strpos($tipo, 'FOR') !== false || strpos($origin, 'CHIH') !== false || strpos($dest, 'CHIH') !== false) {
+                 $has_foraneo = true;
             }
 
             $rate      = $is_loaded ? 110.00 : 55.00;
@@ -337,10 +365,12 @@ function calculate_chihuahua_payroll(array $trips, string $driver_name): array {
             $raw_kms = get_route_kms($origin, $dest, $row['Kms'] ?? 0);
 
             $kms_adj = $raw_kms;
-            if ((strpos($origin, 'RIO BRAVO') !== false || strpos($dest, 'RIO BRAVO') !== false
-              || strpos($origin, 'EL PASO')   !== false || strpos($dest, 'EL PASO')   !== false
-              || strpos($origin, 'ZARAGOZA')  !== false || strpos($dest, 'ZARAGOZA')  !== false)
-             && $raw_kms > 50) {
+            
+            $is_cruce = false;
+            if (strpos($origin, 'EL PASO') !== false && (strpos($dest, 'JUAREZ') !== false || strpos($dest, 'RIO BRAVO') !== false || strpos($dest, 'ZARAGOZA') !== false)) $is_cruce = true;
+            if (strpos($dest, 'EL PASO') !== false && (strpos($origin, 'JUAREZ') !== false || strpos($origin, 'RIO BRAVO') !== false || strpos($origin, 'ZARAGOZA') !== false)) $is_cruce = true;
+
+            if ($is_cruce && $raw_kms >= 40.0) {
                 $kms_adj = max(0.0, $raw_kms - 40.0);
             }
 
@@ -363,10 +393,12 @@ function calculate_chihuahua_payroll(array $trips, string $driver_name): array {
             'Allowed_Liters'      => round((float)$allowed_liters, 2),
             'Yield_Used'          => (float)$unit_yield,
             'Base_Pay'            => (float)$base_pay,
-            'Diesel_Rate'         => 14.85,
+            'Diesel_Rate'         => $has_foraneo ? 14.85 : 14.50,
+            'Suggested_Cost'      => round((float)$allowed_liters * ($has_foraneo ? 14.85 : 14.50), 2),
             'Manual_Refuel_Liters'=> 0.0,
+            'Manual_Actual_Price_Per_Liter' => 0.0,
             'Payroll_Week'        => get_payroll_week($start_ts),
-            'Status'              => 'PENDING',
+            'Status'              => 'NEEDS_INPUT',
             'Is_Pacifico'         => false,
             'Manual_Pac_Loaded'   => false,
             'Manual_Pac_Bono_Sierra'     => false,
@@ -430,7 +462,9 @@ function calculate_pacifico_payroll(array $trips, string $driver_name): array {
             'Yield_Used'                 => (float)$unit_yield,
             'Base_Pay'                   => 0.0,
             'Diesel_Rate'                => 16.00,
+            'Suggested_Cost'             => round((float)$allowed_liters * 16.00, 2),
             'Manual_Refuel_Liters'       => 0.0,
+            'Manual_Actual_Price_Per_Liter' => 0.0,
             'Payroll_Week'               => get_payroll_week($start_ts),
             'Status'                     => 'NEEDS_INPUT',
             'Is_Pacifico'                => true,

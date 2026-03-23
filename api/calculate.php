@@ -36,8 +36,13 @@ try {
         $rate       = (float)($trip['Diesel_Rate']          ?? 0);
         $kms_paid   = (float)($trip['Total_Kms_Paid']       ?? 0);
 
+        $manual_price = (float)($trip['Manual_Actual_Price_Per_Liter'] ?? 0);
+        $effective_rate = $manual_price > 0 ? $manual_price : $rate;
+
         $savings  = max(0.0, $allowed - $refueled);
-        $incentive = $savings * $rate;
+        $incentive = $savings * $effective_rate;
+
+        $bono_quimico_val = (bool)($trip['Manual_Bono_Quimico'] ?? false) ? 250.0 : 0.0;
 
         if ($is_pac) {
             $pac_rate  = ($trip['Manual_Pac_Loaded'] ?? false) ? 0.30 : 0.15;
@@ -49,14 +54,17 @@ try {
             $bonuses += (int)($trip['Manual_Pac_Estancia_Obregon'] ?? 0) * 600.0;
             $bonuses += (int)($trip['Manual_Pac_Estancia_Mochis']  ?? 0) * 300.0;
 
-            $total_pay       = $base_pay + $bonuses + $incentive;
+            $total_pay       = $base_pay + $bonuses + $incentive + $bono_quimico_val;
             $trip['Base_Pay'] = $base_pay;
 
             if (($trip['Status'] ?? '') === 'NEEDS_INPUT') {
                 $trip['Status'] = 'PENDING';
             }
         } else {
-            $total_pay = (float)($trip['Base_Pay'] ?? 0) + $incentive;
+            $total_pay = (float)($trip['Base_Pay'] ?? 0) + $incentive + $bono_quimico_val;
+            if (($trip['Status'] ?? '') === 'NEEDS_INPUT') {
+                $trip['Status'] = 'PENDING';
+            }
         }
 
         $trip['Diesel_Savings'] = $savings;
