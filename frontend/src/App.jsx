@@ -35,13 +35,13 @@ function App() {
       const data = await res.json()
       // console.log("DEBUG: API Response:", data)
       if (!data.trips || data.trips.length === 0) {
-        alert(data.detail || "Warning: Backend returned 0 trips. Ensure file has valid data.");
+        alert(data.detail || "Advertencia: El backend devolvió 0 viajes. Asegúrese de que el archivo tenga datos válidos.");
         setLoading(false);
         return;
       }
       setTrips(data.trips)
     } catch (err) {
-      alert("Error uploading file: " + err.message)
+      alert("Error al subir el archivo: " + err.message)
     } finally {
       setLoading(false)
     }
@@ -60,13 +60,13 @@ function App() {
     <div className="min-h-screen bg-slate-50 text-slate-900 font-sans">
       <header className="bg-slate-900 text-white p-4 shadow-lg sticky top-0 z-50">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
-          <h1 className="text-xl font-bold tracking-tight">Dataholics <span className="text-blue-400">Payroll Tool</span></h1>
+          <h1 className="text-xl font-bold tracking-tight">Dataholics <span className="text-blue-400">Nómina</span></h1>
           <div className="text-xs text-slate-400">
-            v1.1 (Finance Control)
-            {selectedWeek && <span className="ml-2 bg-blue-900 px-2 py-1 rounded text-blue-200">Week {selectedWeek}</span>}
+            v1.1 (Control Financiero)
+            {selectedWeek && <span className="ml-2 bg-blue-900 px-2 py-1 rounded text-blue-200">Semana {selectedWeek}</span>}
             {selectedWeek && (
               <button onClick={() => setSelectedWeek(null)} className="ml-2 hover:text-white underline">
-                Change
+                Cambiar
               </button>
             )}
           </div>
@@ -90,19 +90,19 @@ function App() {
                 onClick={() => setActiveTab('NEEDS_INPUT')}
                 className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${activeTab === 'NEEDS_INPUT' ? 'bg-white text-red-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
               >
-                Incomplete ({trips.filter(t => t.Payroll_Week === selectedWeek && t.Status === 'NEEDS_INPUT').length})
+                Requiere Captura ({trips.filter(t => t.Payroll_Week === selectedWeek && t.Status === 'NEEDS_INPUT').length})
               </button>
               <button
                 onClick={() => setActiveTab('PENDING')}
                 className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${activeTab === 'PENDING' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
               >
-                Pending Review ({trips.filter(t => t.Payroll_Week === selectedWeek && t.Status === 'PENDING').length})
+                Pendiente ({trips.filter(t => t.Payroll_Week === selectedWeek && t.Status === 'PENDING').length})
               </button>
               <button
                 onClick={() => setActiveTab('APPROVED')}
                 className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${activeTab === 'APPROVED' ? 'bg-white text-green-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
               >
-                Approved ({trips.filter(t => t.Payroll_Week === selectedWeek && t.Status === 'APPROVED').length})
+                Aprobado ({trips.filter(t => t.Payroll_Week === selectedWeek && t.Status === 'APPROVED').length})
               </button>
             </div>
 

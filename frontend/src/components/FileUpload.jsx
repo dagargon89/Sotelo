@@ -52,8 +52,8 @@ export default function FileUpload({ onUpload, loading }) {
                     <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500"></div>
                 ) : (
                     <div className="text-center p-6">
-                        <p className="text-xl font-medium text-slate-700">Drag & Drop Genesis Excel</p>
-                        <p className="text-sm text-slate-400 mt-2">or click to browse</p>
+                        <p className="text-xl font-medium text-slate-700">Arrastra y Suelta Excel de Génesis</p>
+                        <p className="text-sm text-slate-400 mt-2">o haz clic para buscar</p>
                     </div>
                 )}
             </label>

@@ -111,19 +111,19 @@ export default function TripCard({ trip, onUpdate }) {
                             {trip.Status === 'APPROVED' && (
                                 <span className="bg-green-100 text-green-700 text-xs font-bold px-2 py-1 rounded flex items-center gap-1">
                                     <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
-                                    APPROVED
+                                    APROBADO
                                 </span>
                             )}
                             {trip.Status === 'NEEDS_INPUT' && (
                                 <span className="bg-orange-100 text-orange-700 text-xs font-bold px-2 py-1 rounded flex items-center gap-1">
-                                    INCOMPLETE
+                                    FALTA CAPTURA
                                 </span>
                             )}
                         </div>
                         <div className="flex items-center gap-2">
                             <span className="text-xs text-slate-500">{trip.Start_Date}</span>
                             <label className="flex items-center gap-2 cursor-pointer">
-                                <span className="text-xs font-medium text-slate-500 uppercase">Approve</span>
+                                <span className="text-xs font-medium text-slate-500 uppercase">Aprobar</span>
                                 <input
                                     type="checkbox"
                                     className="w-5 h-5 rounded border-slate-300 text-green-600 focus:ring-green-500"
@@ -135,9 +135,9 @@ export default function TripCard({ trip, onUpdate }) {
                     </div>
                     <h3 className="font-semibold text-slate-800 text-sm whitespace-pre-wrap break-words">{trip.Route}</h3>
                     <div className="flex gap-4 mt-2 text-xs text-slate-500 items-center">
-                        <span>unit: <b>{trip.Unit}</b></span>
+                        <span>unidad: <b>{trip.Unit}</b></span>
                         <span>kms: <b>{trip.Total_Kms_Paid}</b></span>
-                        <span>yield: <b>{trip.Yield_Used}</b></span>
+                        <span>rend: <b>{trip.Yield_Used}</b></span>
                         {trip.Legs && trip.Legs.length > 0 && (
                             <button onClick={() => setShowLegs(!showLegs)} className="text-blue-500 hover:text-blue-700 font-medium ml-2 uppercase text-[10px] tracking-wider border border-blue-200 bg-blue-50 px-2 py-0.5 rounded transition-all">
                                 {showLegs ? 'Ocultar' : 'Ver'} {trip.Legs.length} Coordenadas
@@ -193,7 +193,7 @@ export default function TripCard({ trip, onUpdate }) {
                     </div>
 
                     <div className="text-center min-w-[70px] ml-auto">
-                        <div className="text-[10px] text-slate-400 mb-1 uppercase tracking-wider font-bold">Incentive</div>
+                        <div className="text-[10px] text-slate-400 mb-1 uppercase tracking-wider font-bold">Incentivo</div>
                         <div className={`font-mono font-bold ${isPositive ? 'text-green-600' : 'text-red-500'}`}>
                             {isPositive ? '+' : ''}${incentive.toFixed(2)}
                         </div>

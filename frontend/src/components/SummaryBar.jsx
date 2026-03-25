@@ -19,7 +19,7 @@ export default function SummaryBar({ trips }) {
                         <span className="font-mono text-lg text-slate-600">${totals.base.toFixed(2)}</span>
                     </div>
                     <div>
-                        <span className="text-xs text-slate-400 block uppercase tracking-wider">Total Incentive</span>
+                        <span className="text-xs text-slate-400 block uppercase tracking-wider">Total Incentivo</span>
                         <span className={`font-mono text-lg ${totals.incentive >= 0 ? 'text-green-600' : 'text-red-500'}`}>
                             {totals.incentive >= 0 ? '+' : ''}${totals.incentive.toFixed(2)}
                         </span>
@@ -28,11 +28,11 @@ export default function SummaryBar({ trips }) {
 
                 <div className="text-right flex items-center gap-6">
                     <div>
-                        <span className="text-xs text-slate-400 block uppercase tracking-wider text-right">Net Payable</span>
+                        <span className="text-xs text-slate-400 block uppercase tracking-wider text-right">Neto a Pagar</span>
                         <span className="font-mono text-2xl font-bold text-slate-900">${totals.total.toFixed(2)}</span>
                     </div>
                     <button className="bg-slate-900 hover:bg-slate-800 text-white px-6 py-2 rounded-lg font-medium transition-colors shadow-lg shadow-slate-900/20">
-                        Export Excel
+                        Exportar Excel
                     </button>
                 </div>
             </div>

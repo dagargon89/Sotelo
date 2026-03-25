@@ -6,8 +6,8 @@ export default function PeriodSelector({ weeks, onSelect }) {
         <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div className="bg-white rounded-xl shadow-2xl max-w-lg w-full p-8">
                 <div className="text-center mb-8">
-                    <h2 className="text-2xl font-bold text-slate-900">Select Payroll Period</h2>
-                    <p className="text-slate-500 mt-2">Which week are you processing today?</p>
+                    <h2 className="text-2xl font-bold text-slate-900">Seleccionar Periodo de Nómina</h2>
+                    <p className="text-slate-500 mt-2">¿Qué semana está procesando hoy?</p>
                 </div>
 
                 <div className="space-y-4">
@@ -22,8 +22,8 @@ export default function PeriodSelector({ weeks, onSelect }) {
                                     {week}
                                 </div>
                                 <div className="text-left">
-                                    <div className="font-semibold text-slate-900">Week {week}</div>
-                                    <div className="text-xs text-slate-500">Payroll Cycle 2025</div>
+                                    <div className="font-semibold text-slate-900">Semana {week}</div>
+                                    <div className="text-xs text-slate-500">Ciclo de Nómina 2026</div>
                                 </div>
                             </div>
                             <div className="text-slate-400 group-hover:text-blue-500">
@@ -40,7 +40,7 @@ export default function PeriodSelector({ weeks, onSelect }) {
                         onClick={() => onSelect('ALL')}
                         className="text-sm text-slate-400 hover:text-slate-600 underline"
                     >
-                        Show All Data (Not Recommended)
+                        Mostrar Todos los Datos (No Recomendado)
                     </button>
                 </div>
             </div>
