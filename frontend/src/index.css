@@ -1,10 +1,37 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
-/* Custom Scrollbar for Trip Cards */
+body {
+    font-family: 'Inter', sans-serif;
+    background-color: #f3f4f6;
+    color: #111827;
+}
+
+.glass-panel {
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+}
+
+.subtle-shadow {
+    box-shadow: 0 4px 40px -8px rgba(0, 0, 0, 0.05), inset 0 0 0 1px rgba(255,255,255,0.5);
+}
+
+/* Custom Scrollbar for clean look */
+::-webkit-scrollbar { 
+    width: 6px; 
+    height: 6px; 
+}
+::-webkit-scrollbar-thumb { 
+    background: #e5e7eb; 
+    border-radius: 10px; 
+}
+
+/* Localized scrollbar for specific elements if needed */
 .trip-card-scroll::-webkit-scrollbar {
     width: 6px;
 }
-
 .trip-card-scroll::-webkit-scrollbar-thumb {
     background-color: #CBD5E1;
     border-radius: 4px;

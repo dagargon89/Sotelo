@@ -14,7 +14,6 @@ export default function TripCard({ trip, onUpdate }) {
     const [estObregon, setEstObregon] = useState(trip.Manual_Pac_Estancia_Obregon ?? 0)
     const [estMochis, setEstMochis] = useState(trip.Manual_Pac_Estancia_Mochis ?? 0)
 
-    // Real-time calculation within component for instant feedback
     const calc = (inLiters, inPrice, inQuimico) => {
         const allowed = trip.Allowed_Liters
         const actual = parseFloat(inLiters) || 0
@@ -26,8 +25,6 @@ export default function TripCard({ trip, onUpdate }) {
         let extras = 0
         if (inQuimico) extras += 250
         
-        // This is a simplified local calc for UI feedback only.
-        // The real total comes from the backend upon save.
         const total = trip.Base_Pay + incentive + extras
         return { savings, incentive, total }
     }
@@ -40,7 +37,6 @@ export default function TripCard({ trip, onUpdate }) {
         setPriceInput(newPrice)
         setBonoQuimico(newQuimico)
 
-        // Optimistic Update
         const results = calc(newLiters, newPrice, newQuimico)
         const updatedTrip = {
             ...trip,
@@ -51,7 +47,6 @@ export default function TripCard({ trip, onUpdate }) {
             Calculated_Total: results.total,
             Calculated_Savings: results.savings
         }
-
         onUpdate(updatedTrip)
     }
 
@@ -81,10 +76,6 @@ export default function TripCard({ trip, onUpdate }) {
             });
             const data = await res.json();
             if (data.trips && data.trips.length > 0) {
-                // Return array structure if onUpdate expects an array (see TripList mapping) 
-                // Wait, TripList passes handleTripUpdate which expects ONE updated trip config.
-                // Wait, TripList says: const handleTripUpdate = (updatedTrip) => { onUpdate([updatedTrips as whole array]) }
-                // So TripList handleTripUpdate handles an object.
                 onUpdate(data.trips[0]);
             }
         } catch (err) {
@@ -92,186 +83,281 @@ export default function TripCard({ trip, onUpdate }) {
         }
     }
 
+    // Process Route for Origin/Destination display if possible
+    const routeParts = trip.Route ? trip.Route.split(' - ') : ['Origen Indefinido', 'Destino Indefinido'];
+    const origin = routeParts[0];
+    const destination = routeParts.length > 1 ? routeParts[routeParts.length - 1] : 'No Especificado';
+
     return (
-        <div className={`bg-white rounded-xl shadow-sm border p-4 transition-all ${trip.Status === 'APPROVED' ? 'border-green-200 bg-green-50/30' : trip.Status === 'NEEDS_INPUT' ? 'border-orange-300 bg-orange-50/20' : 'border-slate-200'}`}>
-            <div className="flex flex-col md:flex-row gap-4">
-                {/* 1. Trip Header & Route */}
-                <div className="flex-1">
-                    <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                            <span className="bg-blue-100 text-blue-700 text-xs font-bold px-2 py-1 rounded">
-                                {trip.Unit}
-                            </span>
-                            <span className="text-xs text-slate-400 font-mono">
-                                {trip.Trip_ID}
-                            </span>
-                            <span className="font-bold text-slate-800 text-sm">
-                                {trip.Driver}
-                            </span>
-                            {trip.Status === 'APPROVED' && (
-                                <span className="bg-green-100 text-green-700 text-xs font-bold px-2 py-1 rounded flex items-center gap-1">
-                                    <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" /></svg>
-                                    APROBADO
-                                </span>
-                            )}
-                            {trip.Status === 'NEEDS_INPUT' && (
-                                <span className="bg-orange-100 text-orange-700 text-xs font-bold px-2 py-1 rounded flex items-center gap-1">
-                                    FALTA CAPTURA
-                                </span>
-                            )}
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <span className="text-xs text-slate-500">{trip.Start_Date}</span>
-                            <label className="flex items-center gap-2 cursor-pointer">
-                                <span className="text-xs font-medium text-slate-500 uppercase">Aprobar</span>
-                                <input
-                                    type="checkbox"
-                                    className="w-5 h-5 rounded border-slate-300 text-green-600 focus:ring-green-500"
-                                    checked={trip.Status === 'APPROVED'}
-                                    onChange={toggleStatus}
-                                />
-                            </label>
+        <div className="glass-panel subtle-shadow rounded-3xl overflow-hidden mb-8 transition-all hover:shadow-lg">
+            
+            {/* Header Section */}
+            <div className="px-8 py-6 flex flex-wrap justify-between items-center border-b border-gray-100/50">
+                <div className="flex items-center gap-5">
+                    {/* Avatar */}
+                    <div className="w-12 h-12 rounded-2xl bg-gray-100 flex items-center justify-center text-gray-700 font-semibold text-lg border border-gray-200">
+                        {trip.Driver ? trip.Driver.substring(0,2).toUpperCase() : 'DR'}
+                    </div>
+                    <div>
+                        <h2 className="text-[19px] font-semibold tracking-tight text-gray-900">{trip.Driver}</h2>
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1 text-[13px] text-gray-500">
+                            <span className="font-medium text-gray-700 bg-gray-100/80 px-2 py-0.5 rounded-md">{trip.Unit}</span>
+                            <span className="font-medium text-gray-700 bg-gray-100/80 px-2 py-0.5 rounded-md">{trip.Trip_ID}</span>
+                            <span>{trip.Start_Date || 'Fecha N/A'}</span>
                         </div>
                     </div>
-                    <h3 className="font-semibold text-slate-800 text-sm whitespace-pre-wrap break-words">{trip.Route}</h3>
-                    <div className="flex gap-4 mt-2 text-xs text-slate-500 items-center">
-                        <span>unidad: <b>{trip.Unit}</b></span>
-                        <span>kms: <b>{trip.Total_Kms_Paid}</b></span>
-                        <span>rend: <b>{trip.Yield_Used}</b></span>
-                        {trip.Legs && trip.Legs.length > 0 && (
-                            <button onClick={() => setShowLegs(!showLegs)} className="text-blue-500 hover:text-blue-700 font-medium ml-2 uppercase text-[10px] tracking-wider border border-blue-200 bg-blue-50 px-2 py-0.5 rounded transition-all">
-                                {showLegs ? 'Ocultar' : 'Ver'} {trip.Legs.length} Coordenadas
-                            </button>
-                        )}
+                </div>
+                {/* Status Minimal */}
+                <div className="flex items-center gap-2 mt-4 sm:mt-0">
+                    <label className="flex items-center gap-3 cursor-pointer group mr-4">
+                        <span className="text-[13px] font-medium text-gray-700 group-hover:text-gray-900">Aprobado</span>
+                        <input
+                            type="checkbox"
+                            checked={trip.Status === 'APPROVED'}
+                            onChange={toggleStatus}
+                            className="w-4 h-4 rounded border-gray-300 text-green-600 focus:ring-green-500 transition-colors cursor-pointer"
+                        />
+                    </label>
+
+                    {trip.Status === 'APPROVED' ? (
+                        <>
+                            <i className="fas fa-check-circle text-green-500"></i>
+                            <span className="text-[13px] font-medium text-green-700">Aprobado</span>
+                        </>
+                    ) : trip.Status === 'NEEDS_INPUT' ? (
+                        <>
+                            <span className="relative flex h-2.5 w-2.5">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-orange-500"></span>
+                            </span>
+                            <span className="text-[13px] font-medium text-orange-700">Falta Captura</span>
+                        </>
+                    ) : (
+                        <>
+                            <span className="relative flex h-2.5 w-2.5">
+                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500"></span>
+                            </span>
+                            <span className="text-[13px] font-medium text-gray-700">Pendiente</span>
+                        </>
+                    )}
+                </div>
+            </div>
+
+            {/* Route & Grid Matrix Section */}
+            <div className="flex flex-col xl:flex-row divide-y xl:divide-y-0 xl:divide-x divide-gray-100/50">
+                
+                {/* Route Minimal */}
+                <div className="px-8 py-8 xl:w-5/12 flex flex-col justify-center">
+                    <div className="flex items-start gap-4 mb-6">
+                        <div className="flex flex-col items-center mt-1.5">
+                            <div className="w-2 h-2 rounded-full bg-gray-400"></div>
+                            <div className="w-px h-10 bg-gradient-to-b from-gray-300 to-gray-200 my-1"></div>
+                            <div className="w-2 h-2 rounded-full bg-gray-900 shadow-[0_0_0_4px_rgba(0,0,0,0.05)]"></div>
+                        </div>
+                        <div>
+                            <div className="mb-5">
+                                <p className="text-[11px] font-medium text-gray-400 uppercase tracking-widest mb-0.5">Origen</p>
+                                <p className="text-[15px] font-medium text-gray-900 whitespace-pre-wrap">{origin}</p>
+                            </div>
+                            <div>
+                                <p className="text-[11px] font-medium text-gray-400 uppercase tracking-widest mb-0.5">Destino Final</p>
+                                <p className="text-[15px] font-medium text-gray-900 whitespace-pre-wrap">{destination}</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div className="flex gap-8 bg-gray-50/50 p-4 rounded-2xl border border-gray-100/80 mt-auto">
+                        <div>
+                            <p className="text-[11px] text-gray-500 uppercase font-medium tracking-wide mb-1">Distancia</p>
+                            <p className="text-xl font-semibold text-gray-900">{trip.Total_Kms_Paid} <span className="text-sm font-normal text-gray-500">km</span></p>
+                        </div>
+                        <div className="w-px bg-gray-200/60"></div>
+                        <div>
+                            <p className="text-[11px] text-gray-500 uppercase font-medium tracking-wide mb-1">Rend</p>
+                            <p className="text-xl font-semibold text-gray-900">{trip.Yield_Used} <span className="text-sm font-normal text-gray-500">km/l</span></p>
+                        </div>
                     </div>
                 </div>
 
-                {/* Inputs & Stats */}
-                <div className="flex items-center gap-4 bg-slate-50 p-3 rounded-lg border border-slate-100 flex-wrap md:flex-nowrap">
-                    <div className="text-center min-w-[50px]">
-                        <div className="text-[10px] text-slate-400 mb-1 uppercase tracking-wider font-bold">Base</div>
-                        <div className="font-mono font-medium text-slate-700">${trip.Base_Pay.toFixed(2)}</div>
+                {/* Financial Clean Grid */}
+                <div className="px-8 py-8 xl:w-7/12 flex flex-col">
+                    <h3 className="text-[13px] font-medium text-gray-900 mb-6 flex items-center gap-2">
+                         Cálculo de Nómina
+                    </h3>
+                    
+                    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                        <div className="bg-gray-50/80 p-4 rounded-2xl">
+                            <p className="text-[11px] text-gray-500 font-medium mb-1">BASE</p>
+                            <p className="font-semibold text-gray-900">${trip.Base_Pay?.toFixed(2) || '0.00'}</p>
+                        </div>
+                        <div className="bg-gray-50/80 p-4 rounded-2xl" title="Límite teórico sugerido por rendimiento">
+                            <p className="text-[11px] text-gray-500 font-medium mb-1">LT. PERMIT</p>
+                            <p className="font-semibold text-gray-900">{trip.Allowed_Liters} L</p>
+                        </div>
+                        <div className="bg-gray-50/80 p-4 rounded-2xl">
+                            <p className="text-[11px] text-gray-500 font-medium mb-1">C. ESP / TARIFA</p>
+                            <p className="font-semibold text-gray-900 text-sm">
+                                ${trip.Suggested_Cost?.toFixed(2) || (trip.Allowed_Liters * trip.Diesel_Rate).toFixed(2)}
+                            </p>
+                        </div>
+                        <div className={`${isPositive ? 'bg-gray-900 text-white' : 'bg-red-50 text-red-700 border border-red-200'} p-4 rounded-2xl shadow flex-1 relative overflow-hidden transition-colors`}>
+                            {isPositive && (
+                                <div className="absolute top-0 right-0 p-4 opacity-10">
+                                    <i className="fas fa-check-circle text-4xl text-white"></i>
+                                </div>
+                            )}
+                            <p className={`text-[11px] font-medium mb-1 relative z-10 ${isPositive ? 'text-gray-300' : 'text-red-600'}`}>
+                                INCENTIVO
+                            </p>
+                            <p className="font-semibold text-lg relative z-10">
+                                {isPositive ? '+' : ''}${incentive.toFixed(2)}
+                            </p>
+                        </div>
                     </div>
 
-                    <div className="text-center min-w-[50px]">
-                        <div className="text-[10px] text-slate-400 mb-1 uppercase tracking-wider font-bold" title="Límite teórico sugerido por rendimiento">Permitidos</div>
-                        <div className="font-mono font-medium text-blue-600">{trip.Allowed_Liters} L</div>
-                    </div>
-
-                    <div className="text-center hidden md:block min-w-[60px]">
-                        <div className="text-[10px] text-slate-400 mb-1 uppercase tracking-wider font-bold">Costo Espe.</div>
-                        <div className="font-mono font-medium text-slate-500">${trip.Suggested_Cost?.toFixed(2) || (trip.Allowed_Liters * trip.Diesel_Rate).toFixed(2)}</div>
-                    </div>
-
-                    <div className="flex flex-col w-20">
-                        <label className="text-[10px] text-slate-400 mb-1 uppercase tracking-wider font-bold text-center">Reales (L)</label>
-                        <input
-                            type="number"
-                            value={liters}
-                            onChange={(e) => handleInputs(e.target.value, priceInput, bonoQuimico)}
-                            placeholder="0.0"
-                            className="w-full px-1 py-1 text-sm font-mono border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-center bg-white shadow-inner"
-                        />
-                    </div>
-
-                    <div className="flex flex-col w-24">
-                        <label className="text-[10px] text-slate-400 mb-1 uppercase tracking-wider font-bold text-center">Precio/L <span className="opacity-70">(${trip.Diesel_Rate})</span></label>
-                        <input
-                            type="number"
-                            value={priceInput}
-                            onChange={(e) => handleInputs(liters, e.target.value, bonoQuimico)}
-                            placeholder={trip.Diesel_Rate}
-                            className="w-full px-1 py-1 text-sm font-mono border border-slate-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-center bg-white shadow-inner"
-                        />
-                    </div>
-
-                    <div className="flex flex-col items-center">
-                        <label className="text-[10px] text-slate-400 mb-1 uppercase tracking-wider font-bold">Químico</label>
-                        <label className="flex items-center cursor-pointer mt-1">
-                            <input type="checkbox" checked={bonoQuimico} onChange={e => handleInputs(liters, priceInput, e.target.checked)} className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-4 h-4" />
-                        </label>
-                    </div>
-
-                    <div className="text-center min-w-[70px] ml-auto">
-                        <div className="text-[10px] text-slate-400 mb-1 uppercase tracking-wider font-bold">Incentivo</div>
-                        <div className={`font-mono font-bold ${isPositive ? 'text-green-600' : 'text-red-500'}`}>
-                            {isPositive ? '+' : ''}${incentive.toFixed(2)}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-auto">
+                        <div>
+                            <label className="block text-[11px] font-semibold text-gray-700 mb-2">LITROS REALES</label>
+                            <input 
+                                type="number" 
+                                value={liters}
+                                onChange={(e) => handleInputs(e.target.value, priceInput, bonoQuimico)}
+                                placeholder="0.00" 
+                                className="w-full bg-white border border-gray-200 text-gray-900 text-[15px] font-medium rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-transparent block px-4 py-2.5 transition-all shadow-sm" 
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-[11px] font-semibold text-gray-700 mb-2">PRECIO POR LITRO</label>
+                            <div className="relative">
+                                <span className="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-500">$</span>
+                                <input 
+                                    type="number" 
+                                    value={priceInput}
+                                    onChange={(e) => handleInputs(liters, e.target.value, bonoQuimico)}
+                                    placeholder={trip.Diesel_Rate} 
+                                    className="w-full bg-white border border-gray-200 text-gray-900 text-[15px] font-medium rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-transparent block pl-8 pr-4 py-2.5 transition-all shadow-sm" 
+                                />
+                            </div>
+                        </div>
+                        <div className="flex flex-col justify-end pb-1">
+                            <label className="flex items-center gap-3 cursor-pointer p-2 rounded-xl hover:bg-gray-50 transition-colors">
+                                <div className="relative flex items-center">
+                                    <input type="checkbox" checked={bonoQuimico} onChange={(e) => handleInputs(liters, priceInput, e.target.checked)} className="peer sr-only" />
+                                    <div className="w-10 h-6 bg-gray-200 rounded-full peer peer-focus:ring-2 peer-focus:ring-gray-900 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gray-900"></div>
+                                </div>
+                                <span className="text-[13px] font-medium text-gray-700">Aplica Químico</span>
+                            </label>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {/* Legs / Coordenadas Breakdown */}
-            {showLegs && trip.Legs && trip.Legs.length > 0 && (
-                <div className="mt-4 p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm w-full">
-                    <h4 className="font-bold text-slate-700 mb-2 flex items-center justify-between">
-                        <span>Desglose de Coordenadas (Trayectos)</span>
-                    </h4>
-                    <ul className="space-y-1">
-                        {trip.Legs.map((leg, i) => (
-                            <li key={i} className="flex flex-col sm:flex-row justify-between items-start sm:items-center py-2 border-b border-slate-200 last:border-0 text-xs">
-                                <div className="flex items-center gap-2 flex-wrap mb-1 sm:mb-0">
-                                    <span className="font-mono text-slate-400 bg-white border border-slate-200 rounded-full w-5 h-5 flex items-center justify-center text-[10px]">{i + 1}</span>
-                                    <span className="font-medium text-slate-700 text-sm">{leg.Origin} <span className="text-slate-400 mx-1">&rarr;</span> {leg.Destination}</span>
+            {/* Detailed Table Section (Legs) */}
+            {trip.Legs && trip.Legs.length > 0 && (
+                <div className="border-t border-gray-100/50">
+                    <div className="px-8 py-4 bg-gray-50/30 flex items-center justify-between cursor-pointer group hover:bg-gray-50/80 transition-colors" onClick={() => setShowLegs(!showLegs)}>
+                        <h4 className="text-[13px] font-semibold text-gray-800 flex items-center gap-2">
+                            <i className={`fas fa-chevron-${showLegs ? 'up' : 'down'} text-gray-400 w-4`}></i> Desglose de Trayectos (Coordenadas)
+                        </h4>
+                        <span className="text-[11px] font-medium text-gray-500 bg-white border border-gray-200 px-3 py-1 rounded-full group-hover:bg-gray-100 transition-colors">
+                            {trip.Legs.length} Piernas
+                        </span>
+                    </div>
+                    
+                    {showLegs && (
+                        <div className="px-8 pb-8 pt-4">
+                            <div className="overflow-x-auto rounded-2xl border border-gray-100">
+                                <table className="w-full text-left border-collapse min-w-[600px]">
+                                    <thead>
+                                        <tr className="bg-gray-50 border-b border-gray-100">
+                                            <th className="p-4 text-[11px] font-semibold text-gray-500 uppercase">#</th>
+                                            <th className="p-4 text-[11px] font-semibold text-gray-500 uppercase">Trayecto</th>
+                                            <th className="p-4 text-[11px] font-semibold text-gray-500 uppercase">Estado Carga</th>
+                                            <th className="p-4 text-[11px] font-semibold text-gray-500 uppercase text-right">KMS</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="text-[13px] text-gray-700 divide-y divide-gray-50">
+                                        {trip.Legs.map((leg, i) => (
+                                            <tr key={i} className="hover:bg-gray-50/50 transition-colors">
+                                                <td className="p-4 font-mono text-gray-400">{i + 1}</td>
+                                                <td className="p-4">
+                                                    <div className="font-medium text-gray-900">{leg.Origin}</div>
+                                                    <div className="text-[11px] text-gray-500 mt-0.5">Hacia: {leg.Destination}</div>
+                                                </td>
+                                                <td className="p-4">
+                                                    {leg.Is_Loaded ? (
+                                                        <span className="bg-green-100/50 text-green-700 px-2 py-1 rounded-md text-[11px] font-medium">Cargado</span>
+                                                    ) : (
+                                                        <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded-md text-[11px] font-medium">Vacío / Transito</span>
+                                                    )}
+                                                    <span className="ml-2 text-[11px] text-gray-400 border border-gray-200 px-1.5 py-0.5 rounded-md">{leg.Type}</span>
+                                                </td>
+                                                <td className="p-4 font-mono text-gray-900 text-right font-medium">{leg.Kms} km</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
 
-                                    {leg.Is_Loaded ? (
-                                        <span className="px-1.5 py-0.5 bg-indigo-100 text-indigo-700 rounded text-[10px] font-bold">Cargado</span>
-                                    ) : (
-                                        <span className="px-1.5 py-0.5 bg-slate-200 text-slate-600 rounded text-[10px] font-bold">Vacío/PT</span>
-                                    )}
-                                    <span className="px-1.5 py-0.5 border border-slate-200 text-slate-500 rounded text-[10px] font-mono">{leg.Type}</span>
-                                    <span className="px-1.5 py-0.5 bg-slate-100 text-slate-500 rounded text-[10px] font-medium hidden sm:inline-block">{leg.Status}</span>
+            {/* Footer: Complements & Action */}
+            <div className="p-6 md:px-8 md:py-6 border-t border-gray-100/50 flex flex-col md:flex-row justify-between items-center gap-6 bg-white/40">
+                
+                <div className="flex flex-wrap items-center gap-x-8 gap-y-4 w-full md:w-auto">
+                    {/* Pacific Options Only Visible If Is_Pacifico */}
+                    {trip.Is_Pacifico && trip.Status === 'NEEDS_INPUT' && (
+                        <>
+                            {/* Pac Loaded toggle */}
+                            <label className="flex items-center gap-3 cursor-pointer group">
+                                <input type="checkbox" checked={pacLoaded} onChange={e => setPacLoaded(e.target.checked)} className="w-4 h-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900 transition-colors cursor-pointer" />
+                                <span className="text-[13px] font-medium text-gray-700 group-hover:text-gray-900">Viaje Cargado</span>
+                            </label>
+                            
+                            {/* Bono Sierra toggle */}
+                            <label className="flex items-center gap-3 cursor-pointer group">
+                                <input type="checkbox" checked={bonoSierra} onChange={e => setBonoSierra(e.target.checked)} className="w-4 h-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900 transition-colors cursor-pointer" />
+                                <span className="text-[13px] font-medium text-gray-700 group-hover:text-gray-900">Bono Sierra</span>
+                            </label>
+
+                            {/* Bono Doble toggle */}
+                            <label className="flex items-center gap-3 cursor-pointer group">
+                                <input type="checkbox" checked={bonoDoble} onChange={e => setBonoDoble(e.target.checked)} className="w-4 h-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900 transition-colors cursor-pointer" />
+                                <span className="text-[13px] font-medium text-gray-700 group-hover:text-gray-900">Bono Doble</span>
+                            </label>
+
+                            <div className="w-px h-6 bg-gray-200 hidden lg:block"></div>
+
+                            {/* Clean Steppers */}
+                            <div className="flex items-center gap-2">
+                                <span className="text-[12px] font-medium text-gray-500">Est. Obregón</span>
+                                <div className="flex items-center bg-white border border-gray-200 rounded-lg p-0.5 shadow-sm">
+                                    <button onClick={() => setEstObregon(Math.max(0, estObregon - 1))} className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-50 rounded-md transition-colors"><i className="fas fa-minus text-[10px]"></i></button>
+                                    <span className="w-6 text-center text-[13px] font-semibold text-gray-900">{estObregon}</span>
+                                    <button onClick={() => setEstObregon(estObregon + 1)} className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-50 rounded-md transition-colors"><i className="fas fa-plus text-[10px]"></i></button>
                                 </div>
-                                <div className="font-mono font-medium text-slate-600 bg-white px-2 py-1 border border-slate-100 rounded shadow-sm">{leg.Kms} km</div>
-                            </li>
-                        ))}
-                    </ul>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <span className="text-[12px] font-medium text-gray-500">Est. Mochis</span>
+                                <div className="flex items-center bg-white border border-gray-200 rounded-lg p-0.5 shadow-sm">
+                                    <button onClick={() => setEstMochis(Math.max(0, estMochis - 1))} className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-50 rounded-md transition-colors"><i className="fas fa-minus text-[10px]"></i></button>
+                                    <span className="w-6 text-center text-[13px] font-semibold text-gray-900">{estMochis}</span>
+                                    <button onClick={() => setEstMochis(estMochis + 1)} className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-50 rounded-md transition-colors"><i className="fas fa-plus text-[10px]"></i></button>
+                                </div>
+                            </div>
+                        </>
+                    )}
                 </div>
-            )}
 
-            {/* Pacifico Form */}
-            {trip.Is_Pacifico && trip.Status === 'NEEDS_INPUT' && (
-                <div className="mt-4 p-4 bg-orange-50 border border-orange-200 rounded-lg">
-                    <h4 className="text-orange-800 font-bold mb-3 flex items-center gap-2">
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
-                        Completar Datos Pacífico
-                    </h4>
-                    <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-                        <label className="flex items-center gap-2 cursor-pointer">
-                            <input type="checkbox" checked={pacLoaded} onChange={e => setPacLoaded(e.target.checked)} className="rounded border-slate-300 text-orange-600 focus:ring-orange-500 w-4 h-4" />
-                            <span className="text-sm text-slate-700 font-medium">Viaje Cargado (.30c)</span>
-                        </label>
-                        <label className="flex items-center gap-2 cursor-pointer">
-                            <input type="checkbox" checked={bonoSierra} onChange={e => setBonoSierra(e.target.checked)} className="rounded border-slate-300 text-orange-600 focus:ring-orange-500 w-4 h-4" />
-                            <span className="text-sm text-slate-700 font-medium">Bono Sierra ($500)</span>
-                        </label>
-                        <label className="flex items-center gap-2 cursor-pointer">
-                            <input type="checkbox" checked={bonoDoble} onChange={e => setBonoDoble(e.target.checked)} className="rounded border-slate-300 text-orange-600 focus:ring-orange-500 w-4 h-4" />
-                            <span className="text-sm text-slate-700 font-medium">Bono Doble ($1726)</span>
-                        </label>
-                        <div className="flex items-center gap-2">
-                            <span className="text-sm text-slate-700 font-medium">Estancias Obregón:</span>
-                            <input type="number" min="0" value={estObregon} onChange={e => setEstObregon(e.target.value)} className="w-16 border-slate-300 rounded text-center px-2 py-1 focus:ring-orange-500 focus:border-orange-500" />
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <span className="text-sm text-slate-700 font-medium">Estancias Mochis:</span>
-                            <input type="number" min="0" value={estMochis} onChange={e => setEstMochis(e.target.value)} className="w-16 border-slate-300 rounded text-center px-2 py-1 focus:ring-orange-500 focus:border-orange-500" />
-                        </div>
-                    </div>
-                    <div className="mt-4 flex justify-end">
-                        <button onClick={handleSave} className="bg-orange-600 text-white px-5 py-2 rounded-lg text-sm font-medium shadow hover:bg-orange-700 transition active:scale-95">
-                            Calcular y Guardar
-                        </button>
-                    </div>
-                </div>
-            )}
-            {!trip.Is_Pacifico && trip.Status === 'NEEDS_INPUT' && (
-                <div className="mt-4 flex justify-end">
-                    <button onClick={handleSave} className="bg-blue-600 text-white px-5 py-2 rounded-lg text-sm font-medium shadow hover:bg-blue-700 transition active:scale-95">
-                        Guardar Diésel
-                    </button>
-                </div>
-            )}
+                {/* Final Action */}
+                <button onClick={handleSave} className="w-full md:w-auto px-8 py-3 text-[14px] font-semibold text-white bg-gray-900 rounded-xl hover:bg-gray-800 focus:outline-none focus:ring-4 focus:ring-gray-900/20 transition-all shadow-lg flex items-center justify-center gap-2">
+                    <i className="fas fa-save"></i> Guardar y Calcular
+                </button>
+
+            </div>
         </div>
     )
 }

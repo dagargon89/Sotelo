@@ -57,7 +57,7 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans">
+    <div className="min-h-screen text-gray-900 font-sans antialiased">
       <header className="bg-slate-900 text-white p-4 shadow-lg sticky top-0 z-50">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <h1 className="text-xl font-bold tracking-tight">Dataholics <span className="text-blue-400">Nómina</span></h1>
