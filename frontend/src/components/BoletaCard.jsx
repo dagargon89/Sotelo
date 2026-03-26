@@ -166,8 +166,8 @@ export default function BoletaCard({ trip, onUpdate }) {
                         <tbody className="divide-y divide-gray-100">
                             {rows.map((row, i) => (
                                 <tr key={i} className={`text-[12px] ${i % 2 === 0 ? 'bg-white' : 'bg-gray-50/60'} hover:bg-blue-50/30 transition-colors`}>
-                                    {/* Folio Liquidacion */}
-                                    <td className="px-3 py-2 text-gray-600 font-mono whitespace-nowrap">{row.Folio_Liquidacion || '—'}</td>
+                                    {/* Factura */}
+                                    <td className="px-3 py-2 text-gray-600 font-mono whitespace-nowrap">{row.Factura || '—'}</td>
                                     {/* Coordenada */}
                                     <td className="px-3 py-2 text-gray-600 font-mono whitespace-nowrap">{row.Coordenada || '—'}</td>
                                     {/* Fecha Salida */}
