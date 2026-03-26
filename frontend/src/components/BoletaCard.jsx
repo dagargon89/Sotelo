@@ -2,11 +2,7 @@ import React, { useState } from 'react'
 import { buildApiUrl } from '../api'
 
 export default function BoletaCard({ trip, onUpdate }) {
-    const [liters, setLiters] = useState(trip.Manual_Refuel_Liters || '')
-    const [priceInput, setPriceInput] = useState(trip.Manual_Actual_Price_Per_Liter || '')
-    const [bonoQuimico, setBonoQuimico] = useState(trip.Manual_Bono_Quimico ?? false)
-
-    // Pacifico states
+    // Pacifico states (kept for future use if needed)
     const [pacLoaded, setPacLoaded] = useState(trip.Manual_Pac_Loaded ?? true)
     const [bonoSierra, setBonoSierra] = useState(trip.Manual_Pac_Bono_Sierra ?? false)
     const [bonoDoble, setBonoDoble] = useState(trip.Manual_Pac_Bono_Doble ?? false)
@@ -15,6 +11,20 @@ export default function BoletaCard({ trip, onUpdate }) {
 
     // Accordion state - track which rows are expanded
     const [expandedRows, setExpandedRows] = useState(new Set())
+
+    // Editable row data - initialize with trip.Rows values
+    const [rowsData, setRowsData] = useState(() => {
+        return (trip.Rows || []).map(row => ({
+            Kms: row.Kms || 0,
+            Recarga: row.Recarga || 0,
+            Rendimiento: row.Rendimiento || 0,
+            Peso_Carga: row.Peso_Carga || 0,
+            CVP: row.CVP || '',
+            Pago_Por_Km: row.Pago_Por_Km || 0,
+            Litros_A_Pago: row.Litros_A_Pago || 0,
+            Diesel_A_Favor: row.Diesel_A_Favor || 0
+        }))
+    })
 
     const toggleRow = (index) => {
         const newExpanded = new Set(expandedRows)
@@ -26,36 +36,31 @@ export default function BoletaCard({ trip, onUpdate }) {
         setExpandedRows(newExpanded)
     }
 
-    const calc = (inLiters, inPrice, inQuimico) => {
-        const allowed = trip.Allowed_Liters
-        const actual = parseFloat(inLiters) || 0
-        const savings = allowed - actual
-        const price = parseFloat(inPrice) > 0 ? parseFloat(inPrice) : trip.Diesel_Rate
-        const incentive = savings * price
-        let extras = 0
-        if (inQuimico) extras += 250
-        const total = trip.Base_Pay + incentive + extras
-        return { savings, incentive, total }
+    const handleRowFieldChange = (rowIndex, field, value) => {
+        const newRowsData = [...rowsData]
+        newRowsData[rowIndex] = {
+            ...newRowsData[rowIndex],
+            [field]: value
+        }
+        setRowsData(newRowsData)
+
+        // Recalculate based on changed values
+        recalculateRow(rowIndex, newRowsData[rowIndex])
     }
 
-    const { incentive } = calc(liters, priceInput, bonoQuimico)
-    const isPositive = incentive >= 0
-
-    const handleInputs = (newLiters, newPrice, newQuimico) => {
-        setLiters(newLiters)
-        setPriceInput(newPrice)
-        setBonoQuimico(newQuimico)
-        const results = calc(newLiters, newPrice, newQuimico)
-        const updatedTrip = {
-            ...trip,
-            Manual_Refuel_Liters: parseFloat(newLiters) || 0,
-            Manual_Actual_Price_Per_Liter: parseFloat(newPrice) || 0,
-            Manual_Bono_Quimico: newQuimico,
-            Calculated_Incentive: results.incentive,
-            Calculated_Total: results.total,
-            Calculated_Savings: results.savings
+    const recalculateRow = (rowIndex, rowData) => {
+        // Update the trip's Rows with new calculated values
+        const updatedRows = [...(trip.Rows || [])]
+        updatedRows[rowIndex] = {
+            ...updatedRows[rowIndex],
+            ...rowData
         }
-        onUpdate(updatedTrip)
+
+        // Notify parent component of the update
+        onUpdate({
+            ...trip,
+            Rows: updatedRows
+        })
     }
 
     const toggleStatus = () => {
@@ -93,6 +98,22 @@ export default function BoletaCard({ trip, onUpdate }) {
 
     const rows = trip.Rows || []
     const initials = trip.Driver ? trip.Driver.substring(0, 2).toUpperCase() : 'DR'
+
+    // Debug: Log rows data to check what we're receiving
+    React.useEffect(() => {
+        if (rows.length > 0) {
+            console.log(`Boleta ${trip.Boleta} - Rows:`, rows)
+            console.log(`Boleta ${trip.Boleta} - Number of rows:`, rows.length)
+            rows.forEach((row, idx) => {
+                console.log(`Row ${idx}:`, {
+                    Factura: row.Factura,
+                    Coordenada: row.Coordenada,
+                    Origen: row.Origen,
+                    Destino: row.Destino
+                })
+            })
+        }
+    }, [trip.Boleta, rows])
 
     return (
         <div className="glass-panel subtle-shadow rounded-3xl overflow-hidden mb-8 transition-all hover:shadow-lg">
@@ -201,51 +222,114 @@ export default function BoletaCard({ trip, onUpdate }) {
                                                     <table className="w-full">
                                                         <thead>
                                                             <tr className="bg-slate-700 text-white">
-                                                                <th className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wider text-right">KMS</th>
-                                                                <th className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wider bg-yellow-400 text-slate-900 text-right">Recarga</th>
-                                                                <th className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wider bg-yellow-400 text-slate-900 text-right">Rendimiento</th>
-                                                                <th className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wider bg-yellow-400 text-slate-900 text-right">Peso Carga</th>
-                                                                <th className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wider text-center">Tipo</th>
+                                                                <th className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wider text-right">KMS ✎</th>
+                                                                <th className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wider bg-yellow-400 text-slate-900 text-right">Recarga ✎</th>
+                                                                <th className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wider bg-yellow-400 text-slate-900 text-right">Rendimiento ✎</th>
+                                                                <th className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wider bg-yellow-400 text-slate-900 text-right">Peso Carga ✎</th>
+                                                                <th className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wider text-center">Tipo ✎</th>
                                                                 <th className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wider">Remolque</th>
                                                                 <th className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wider">Cliente</th>
-                                                                <th className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wider bg-yellow-400 text-slate-900 text-right">Pago/KM</th>
-                                                                <th className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wider bg-yellow-400 text-slate-900 text-right">Litros Pago</th>
-                                                                <th className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wider bg-yellow-400 text-slate-900 text-right">Diesel Favor</th>
+                                                                <th className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wider bg-yellow-400 text-slate-900 text-right">Pago/KM ✎</th>
+                                                                <th className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wider bg-yellow-400 text-slate-900 text-right">Litros Pago ✎</th>
+                                                                <th className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wider bg-yellow-400 text-slate-900 text-right">Diesel Favor ✎</th>
                                                             </tr>
                                                         </thead>
                                                         <tbody>
                                                             <tr className="bg-white/80">
-                                                                {/* KMS */}
-                                                                <td className="px-4 py-3 text-gray-700 font-mono text-right text-[13px]">{row.Kms > 0 ? row.Kms : '—'}</td>
-                                                                {/* Recarga */}
-                                                                <td className="px-4 py-3 bg-yellow-50/60 text-gray-500 font-mono text-right text-[13px]">{row.Recarga === 0 ? '0.00' : row.Recarga}</td>
-                                                                {/* Rendimiento */}
-                                                                <td className="px-4 py-3 bg-yellow-50/60 text-gray-700 font-mono text-right text-[13px]">{row.Rendimiento?.toFixed(2) || '—'}</td>
-                                                                {/* Peso de Carga */}
-                                                                <td className="px-4 py-3 bg-yellow-50/60 text-gray-400 text-right text-[13px]">{row.Peso_Carga || '—'}</td>
-                                                                {/* Tipo C/V/PT */}
-                                                                <td className="px-4 py-3 text-center">
-                                                                    <span className={`inline-block text-[11px] font-bold px-2 py-0.5 rounded ${
-                                                                        row.CVP === 'C' ? 'bg-green-100 text-green-700' :
-                                                                        row.CVP === 'PT' ? 'bg-blue-100 text-blue-700' :
-                                                                        'bg-gray-100 text-gray-600'
-                                                                    }`}>{row.CVP || '—'}</span>
+                                                                {/* KMS - Editable */}
+                                                                <td className="px-4 py-2 bg-white">
+                                                                    <input
+                                                                        type="number"
+                                                                        value={rowsData[i]?.Kms || ''}
+                                                                        onChange={(e) => handleRowFieldChange(i, 'Kms', parseFloat(e.target.value) || 0)}
+                                                                        className="w-full px-2 py-1 text-[13px] text-right font-mono border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                                                                    />
                                                                 </td>
-                                                                {/* Remolque */}
+                                                                {/* Recarga - Editable */}
+                                                                <td className="px-4 py-2 bg-yellow-50/60">
+                                                                    <input
+                                                                        type="number"
+                                                                        step="0.01"
+                                                                        value={rowsData[i]?.Recarga || ''}
+                                                                        onChange={(e) => handleRowFieldChange(i, 'Recarga', parseFloat(e.target.value) || 0)}
+                                                                        className="w-full px-2 py-1 text-[13px] text-right font-mono border border-yellow-300 rounded focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+                                                                    />
+                                                                </td>
+                                                                {/* Rendimiento - Editable */}
+                                                                <td className="px-4 py-2 bg-yellow-50/60">
+                                                                    <input
+                                                                        type="number"
+                                                                        step="0.01"
+                                                                        value={rowsData[i]?.Rendimiento || ''}
+                                                                        onChange={(e) => handleRowFieldChange(i, 'Rendimiento', parseFloat(e.target.value) || 0)}
+                                                                        className="w-full px-2 py-1 text-[13px] text-right font-mono border border-yellow-300 rounded focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+                                                                    />
+                                                                </td>
+                                                                {/* Peso de Carga - Editable */}
+                                                                <td className="px-4 py-2 bg-yellow-50/60">
+                                                                    <input
+                                                                        type="number"
+                                                                        value={rowsData[i]?.Peso_Carga || ''}
+                                                                        onChange={(e) => handleRowFieldChange(i, 'Peso_Carga', parseFloat(e.target.value) || 0)}
+                                                                        className="w-full px-2 py-1 text-[13px] text-right font-mono border border-yellow-300 rounded focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+                                                                    />
+                                                                </td>
+                                                                {/* Tipo C/V/PT - Editable Select */}
+                                                                <td className="px-4 py-2 text-center">
+                                                                    <select
+                                                                        value={rowsData[i]?.CVP || ''}
+                                                                        onChange={(e) => handleRowFieldChange(i, 'CVP', e.target.value)}
+                                                                        className={`px-2 py-1 text-[11px] font-bold rounded border-2 focus:ring-2 focus:ring-blue-500 ${
+                                                                            rowsData[i]?.CVP === 'C' ? 'bg-green-100 text-green-700 border-green-300' :
+                                                                            rowsData[i]?.CVP === 'PT' ? 'bg-blue-100 text-blue-700 border-blue-300' :
+                                                                            'bg-gray-100 text-gray-600 border-gray-300'
+                                                                        }`}
+                                                                    >
+                                                                        <option value="">—</option>
+                                                                        <option value="C">C</option>
+                                                                        <option value="V">V</option>
+                                                                        <option value="PT">PT</option>
+                                                                    </select>
+                                                                </td>
+                                                                {/* Remolque - Read only */}
                                                                 <td className="px-4 py-3 text-gray-600 text-[13px]">{row.Remolque || '—'}</td>
-                                                                {/* Cliente */}
+                                                                {/* Cliente - Read only */}
                                                                 <td className="px-4 py-3 text-gray-800 text-[13px]" title={row.Cliente}>
                                                                     <div className="truncate max-w-[150px]">{row.Cliente || '—'}</div>
                                                                 </td>
-                                                                {/* Pago por KM */}
-                                                                <td className="px-4 py-3 bg-yellow-50/60 text-gray-700 font-mono text-right text-[13px]">{row.Pago_Por_Km > 0 ? `$${row.Pago_Por_Km.toFixed(2)}` : '—'}</td>
-                                                                {/* Litros a Pago */}
-                                                                <td className="px-4 py-3 bg-yellow-50/60 text-gray-700 font-mono text-right text-[13px]">{row.Litros_A_Pago?.toFixed(2) || '—'}</td>
-                                                                {/* Diesel a Favor */}
-                                                                <td className="px-4 py-3 bg-yellow-50/60 font-mono text-right text-[13px]">
-                                                                    <span className={row.Diesel_A_Favor > 0 ? 'text-green-700 font-semibold' : 'text-red-600'}>
-                                                                        {row.Diesel_A_Favor !== undefined ? row.Diesel_A_Favor.toFixed(2) : '—'}
-                                                                    </span>
+                                                                {/* Pago por KM - Editable */}
+                                                                <td className="px-4 py-2 bg-yellow-50/60">
+                                                                    <input
+                                                                        type="number"
+                                                                        step="0.01"
+                                                                        value={rowsData[i]?.Pago_Por_Km || ''}
+                                                                        onChange={(e) => handleRowFieldChange(i, 'Pago_Por_Km', parseFloat(e.target.value) || 0)}
+                                                                        className="w-full px-2 py-1 text-[13px] text-right font-mono border border-yellow-300 rounded focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+                                                                    />
+                                                                </td>
+                                                                {/* Litros a Pago - Editable */}
+                                                                <td className="px-4 py-2 bg-yellow-50/60">
+                                                                    <input
+                                                                        type="number"
+                                                                        step="0.01"
+                                                                        value={rowsData[i]?.Litros_A_Pago || ''}
+                                                                        onChange={(e) => handleRowFieldChange(i, 'Litros_A_Pago', parseFloat(e.target.value) || 0)}
+                                                                        className="w-full px-2 py-1 text-[13px] text-right font-mono border border-yellow-300 rounded focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+                                                                    />
+                                                                </td>
+                                                                {/* Diesel a Favor - Editable */}
+                                                                <td className="px-4 py-2 bg-yellow-50/60">
+                                                                    <input
+                                                                        type="number"
+                                                                        step="0.01"
+                                                                        value={rowsData[i]?.Diesel_A_Favor || ''}
+                                                                        onChange={(e) => handleRowFieldChange(i, 'Diesel_A_Favor', parseFloat(e.target.value) || 0)}
+                                                                        className={`w-full px-2 py-1 text-[13px] text-right font-mono font-semibold border rounded focus:ring-2 focus:ring-yellow-500 focus:border-transparent ${
+                                                                            (rowsData[i]?.Diesel_A_Favor || 0) > 0
+                                                                                ? 'text-green-700 border-green-300'
+                                                                                : 'text-red-600 border-red-300'
+                                                                        }`}
+                                                                    />
                                                                 </td>
                                                             </tr>
                                                         </tbody>
@@ -260,71 +344,6 @@ export default function BoletaCard({ trip, onUpdate }) {
                     </table>
                 </div>
             )}
-
-            {/* ── Financial Summary ── */}
-            <div className="px-8 py-6 border-b border-gray-100/50">
-                <h3 className="text-[13px] font-medium text-gray-900 mb-4">Cálculo de Nómina</h3>
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                    <div className="bg-gray-50/80 p-4 rounded-2xl">
-                        <p className="text-[11px] text-gray-500 font-medium mb-1">BASE</p>
-                        <p className="font-semibold text-gray-900">${trip.Base_Pay?.toFixed(2) || '0.00'}</p>
-                    </div>
-                    <div className="bg-gray-50/80 p-4 rounded-2xl" title="Límite teórico sugerido por rendimiento">
-                        <p className="text-[11px] text-gray-500 font-medium mb-1">LT. PERMIT</p>
-                        <p className="font-semibold text-gray-900">{trip.Allowed_Liters} L</p>
-                    </div>
-                    <div className="bg-gray-50/80 p-4 rounded-2xl">
-                        <p className="text-[11px] text-gray-500 font-medium mb-1">C. ESP / TARIFA</p>
-                        <p className="font-semibold text-gray-900 text-sm">${trip.Suggested_Cost?.toFixed(2) || (trip.Allowed_Liters * trip.Diesel_Rate).toFixed(2)}</p>
-                    </div>
-                    <div className={`${isPositive ? 'bg-gray-900 text-white' : 'bg-red-50 text-red-700 border border-red-200'} p-4 rounded-2xl shadow flex-1 relative overflow-hidden transition-colors`}>
-                        {isPositive && (
-                            <div className="absolute top-0 right-0 p-4 opacity-10">
-                                <i className="fas fa-check-circle text-4xl text-white"></i>
-                            </div>
-                        )}
-                        <p className={`text-[11px] font-medium mb-1 relative z-10 ${isPositive ? 'text-gray-300' : 'text-red-600'}`}>INCENTIVO</p>
-                        <p className="font-semibold text-lg relative z-10">
-                            {isPositive ? '+' : ''}${incentive.toFixed(2)}
-                        </p>
-                    </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                        <label className="block text-[11px] font-semibold text-gray-700 mb-2">LITROS REALES</label>
-                        <input
-                            type="number"
-                            value={liters}
-                            onChange={(e) => handleInputs(e.target.value, priceInput, bonoQuimico)}
-                            placeholder="0.00"
-                            className="w-full bg-white border border-gray-200 text-gray-900 text-[15px] font-medium rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-transparent block px-4 py-2.5 transition-all shadow-sm"
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-[11px] font-semibold text-gray-700 mb-2">PRECIO POR LITRO</label>
-                        <div className="relative">
-                            <span className="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-500">$</span>
-                            <input
-                                type="number"
-                                value={priceInput}
-                                onChange={(e) => handleInputs(liters, e.target.value, bonoQuimico)}
-                                placeholder={trip.Diesel_Rate}
-                                className="w-full bg-white border border-gray-200 text-gray-900 text-[15px] font-medium rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-transparent block pl-8 pr-4 py-2.5 transition-all shadow-sm"
-                            />
-                        </div>
-                    </div>
-                    <div className="flex flex-col justify-end pb-1">
-                        <label className="flex items-center gap-3 cursor-pointer p-2 rounded-xl hover:bg-gray-50 transition-colors">
-                            <div className="relative flex items-center">
-                                <input type="checkbox" checked={bonoQuimico} onChange={(e) => handleInputs(liters, priceInput, e.target.checked)} className="peer sr-only" />
-                                <div className="w-10 h-6 bg-gray-200 rounded-full peer peer-focus:ring-2 peer-focus:ring-gray-900 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gray-900"></div>
-                            </div>
-                            <span className="text-[13px] font-medium text-gray-700">Aplica Químico</span>
-                        </label>
-                    </div>
-                </div>
-            </div>
 
             {/* ── Footer: Bonos / Estancia + Save ── */}
             <div className="p-6 md:px-8 md:py-6 flex flex-col md:flex-row justify-between items-center gap-6 bg-white/40">
