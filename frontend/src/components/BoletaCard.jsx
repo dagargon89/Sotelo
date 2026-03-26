@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { buildApiUrl } from '../api'
 
 export default function BoletaCard({ trip, onUpdate }) {
@@ -12,6 +12,19 @@ export default function BoletaCard({ trip, onUpdate }) {
     const [bonoDoble, setBonoDoble] = useState(trip.Manual_Pac_Bono_Doble ?? false)
     const [estObregon, setEstObregon] = useState(trip.Manual_Pac_Estancia_Obregon ?? 0)
     const [estMochis, setEstMochis] = useState(trip.Manual_Pac_Estancia_Mochis ?? 0)
+
+    // Accordion state - track which rows are expanded
+    const [expandedRows, setExpandedRows] = useState(new Set())
+
+    const toggleRow = (index) => {
+        const newExpanded = new Set(expandedRows)
+        if (newExpanded.has(index)) {
+            newExpanded.delete(index)
+        } else {
+            newExpanded.add(index)
+        }
+        setExpandedRows(newExpanded)
+    }
 
     const calc = (inLiters, inPrice, inQuimico) => {
         const allowed = trip.Allowed_Liters
@@ -139,77 +152,110 @@ export default function BoletaCard({ trip, onUpdate }) {
                 </div>
             </div>
 
-            {/* ── Boleta Rows Table ── */}
+            {/* ── Boleta Rows Accordion ── */}
             {rows.length > 0 && (
-                <div className="overflow-x-auto border-b border-gray-100/50">
-                    <table className="w-full text-left border-collapse min-w-[1300px]">
+                <div className="border-b border-gray-100/50">
+                    <table className="w-full text-left border-collapse">
                         <thead>
                             <tr className="bg-slate-800 text-white">
-                                <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider whitespace-nowrap">Factura</th>
-                                <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider whitespace-nowrap">Cordenada</th>
-                                <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider whitespace-nowrap">Fecha Salida</th>
-                                <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider whitespace-nowrap">Fecha Llegada</th>
-                                <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider whitespace-nowrap">Origen</th>
-                                <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider whitespace-nowrap">Destino</th>
-                                <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider whitespace-nowrap text-right">KMS</th>
-                                <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider whitespace-nowrap bg-yellow-400 text-slate-900 text-right">Recarga</th>
-                                <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider whitespace-nowrap bg-yellow-400 text-slate-900 text-right">Rendimiento</th>
-                                <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider whitespace-nowrap bg-yellow-400 text-slate-900 text-right">Peso de Carga (kg)</th>
-                                <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider whitespace-nowrap">C / V / PT</th>
-                                <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider whitespace-nowrap">Remolque</th>
-                                <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider whitespace-nowrap">Cliente</th>
-                                <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider whitespace-nowrap bg-yellow-400 text-slate-900 text-right">Pago por KM</th>
-                                <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider whitespace-nowrap bg-yellow-400 text-slate-900 text-right">Litros a Pago</th>
-                                <th className="px-3 py-2.5 text-[10px] font-semibold uppercase tracking-wider whitespace-nowrap bg-yellow-400 text-slate-900 text-right">Diesel a Favor</th>
+                                <th className="px-4 py-3 text-[12px] font-semibold uppercase tracking-wider w-[14%]">Factura</th>
+                                <th className="px-4 py-3 text-[12px] font-semibold uppercase tracking-wider w-[12%]">Coordenada</th>
+                                <th className="px-4 py-3 text-[12px] font-semibold uppercase tracking-wider w-[16%]">Fecha Salida</th>
+                                <th className="px-4 py-3 text-[12px] font-semibold uppercase tracking-wider w-[16%]">Fecha Llegada</th>
+                                <th className="px-4 py-3 text-[12px] font-semibold uppercase tracking-wider w-[18%]">Origen</th>
+                                <th className="px-4 py-3 text-[12px] font-semibold uppercase tracking-wider w-[18%]">Destino</th>
+                                <th className="px-4 py-3 text-[12px] font-semibold uppercase tracking-wider text-center w-[6%]">
+                                    <i className="fas fa-chevron-down"></i>
+                                </th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-100">
-                            {rows.map((row, i) => (
-                                <tr key={i} className={`text-[12px] ${i % 2 === 0 ? 'bg-white' : 'bg-gray-50/60'} hover:bg-blue-50/30 transition-colors`}>
-                                    {/* Factura */}
-                                    <td className="px-3 py-2 text-gray-600 font-mono whitespace-nowrap">{row.Factura || '—'}</td>
-                                    {/* Coordenada */}
-                                    <td className="px-3 py-2 text-gray-600 font-mono whitespace-nowrap">{row.Coordenada || '—'}</td>
-                                    {/* Fecha Salida */}
-                                    <td className="px-3 py-2 text-gray-600 whitespace-nowrap">{row.Fecha_Salida || '—'}</td>
-                                    {/* Fecha Llegada */}
-                                    <td className="px-3 py-2 text-gray-600 whitespace-nowrap">{row.Fecha_Llegada || '—'}</td>
-                                    {/* Origen */}
-                                    <td className="px-3 py-2 text-gray-800 font-medium max-w-[150px] truncate" title={row.Origen}>{row.Origen || '—'}</td>
-                                    {/* Destino */}
-                                    <td className="px-3 py-2 text-gray-800 font-medium max-w-[150px] truncate" title={row.Destino}>{row.Destino || '—'}</td>
-                                    {/* KMS */}
-                                    <td className="px-3 py-2 text-gray-700 font-mono text-right">{row.Kms > 0 ? row.Kms : '—'}</td>
-                                    {/* RECARGA (yellow - editable later) */}
-                                    <td className="px-3 py-2 bg-yellow-50/60 text-gray-500 font-mono text-right">{row.Recarga === 0 ? '0.00' : row.Recarga}</td>
-                                    {/* RENDIMIENTO */}
-                                    <td className="px-3 py-2 bg-yellow-50/60 text-gray-700 font-mono text-right">{row.Rendimiento?.toFixed(5) || '—'}</td>
-                                    {/* PESO DE CARGA */}
-                                    <td className="px-3 py-2 bg-yellow-50/60 text-gray-400 text-right">{row.Peso_Carga || '—'}</td>
-                                    {/* C/V/PT */}
-                                    <td className="px-3 py-2">
-                                        <span className={`inline-block text-[11px] font-bold px-2 py-0.5 rounded ${
-                                            row.CVP === 'C' ? 'bg-green-100 text-green-700' :
-                                            row.CVP === 'PT' ? 'bg-blue-100 text-blue-700' :
-                                            'bg-gray-100 text-gray-600'
-                                        }`}>{row.CVP || '—'}</span>
-                                    </td>
-                                    {/* Remolque */}
-                                    <td className="px-3 py-2 text-gray-600 whitespace-nowrap">{row.Remolque || '—'}</td>
-                                    {/* Cliente */}
-                                    <td className="px-3 py-2 text-gray-800 max-w-[160px] truncate" title={row.Cliente}>{row.Cliente || '—'}</td>
-                                    {/* Pago por KM */}
-                                    <td className="px-3 py-2 bg-yellow-50/60 text-gray-700 font-mono text-right">{row.Pago_Por_Km > 0 ? `$${row.Pago_Por_Km.toFixed(2)}` : '—'}</td>
-                                    {/* Litros a Pago */}
-                                    <td className="px-3 py-2 bg-yellow-50/60 text-gray-700 font-mono text-right">{row.Litros_A_Pago?.toFixed(2) || '—'}</td>
-                                    {/* Diesel a Favor */}
-                                    <td className="px-3 py-2 bg-yellow-50/60 font-mono text-right">
-                                        <span className={row.Diesel_A_Favor > 0 ? 'text-green-700 font-semibold' : 'text-red-600'}>
-                                            {row.Diesel_A_Favor !== undefined ? row.Diesel_A_Favor.toFixed(2) : '—'}
-                                        </span>
-                                    </td>
-                                </tr>
-                            ))}
+                        <tbody>
+                            {rows.map((row, i) => {
+                                const isExpanded = expandedRows.has(i)
+                                return (
+                                    <React.Fragment key={i}>
+                                        {/* Main Row - Always Visible */}
+                                        <tr
+                                            className={`cursor-pointer ${i % 2 === 0 ? 'bg-white' : 'bg-gray-50/60'} hover:bg-blue-50/40 transition-colors border-b border-gray-100`}
+                                            onClick={() => toggleRow(i)}
+                                        >
+                                            <td className="px-4 py-3 text-gray-700 font-mono text-[14px]">{row.Factura || '—'}</td>
+                                            <td className="px-4 py-3 text-gray-700 font-mono text-[14px]">{row.Coordenada || '—'}</td>
+                                            <td className="px-4 py-3 text-gray-600 text-[14px]">{row.Fecha_Salida || '—'}</td>
+                                            <td className="px-4 py-3 text-gray-600 text-[14px]">{row.Fecha_Llegada || '—'}</td>
+                                            <td className="px-4 py-3 text-gray-800 font-medium text-[14px]" title={row.Origen}>
+                                                <div className="truncate">{row.Origen || '—'}</div>
+                                            </td>
+                                            <td className="px-4 py-3 text-gray-800 font-medium text-[14px]" title={row.Destino}>
+                                                <div className="truncate">{row.Destino || '—'}</div>
+                                            </td>
+                                            <td className="px-4 py-3 text-center">
+                                                <i className={`fas fa-chevron-${isExpanded ? 'up' : 'down'} text-gray-500 text-[14px] transition-transform duration-200`}></i>
+                                            </td>
+                                        </tr>
+
+                                        {/* Expanded Content - Additional Row */}
+                                        {isExpanded && (
+                                            <tr className={`${i % 2 === 0 ? 'bg-blue-50/30' : 'bg-blue-50/50'} border-b border-blue-200`}>
+                                                <td colSpan="7" className="px-0 py-0">
+                                                    <table className="w-full">
+                                                        <thead>
+                                                            <tr className="bg-slate-700 text-white">
+                                                                <th className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wider text-right">KMS</th>
+                                                                <th className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wider bg-yellow-400 text-slate-900 text-right">Recarga</th>
+                                                                <th className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wider bg-yellow-400 text-slate-900 text-right">Rendimiento</th>
+                                                                <th className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wider bg-yellow-400 text-slate-900 text-right">Peso Carga</th>
+                                                                <th className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wider text-center">Tipo</th>
+                                                                <th className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wider">Remolque</th>
+                                                                <th className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wider">Cliente</th>
+                                                                <th className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wider bg-yellow-400 text-slate-900 text-right">Pago/KM</th>
+                                                                <th className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wider bg-yellow-400 text-slate-900 text-right">Litros Pago</th>
+                                                                <th className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wider bg-yellow-400 text-slate-900 text-right">Diesel Favor</th>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            <tr className="bg-white/80">
+                                                                {/* KMS */}
+                                                                <td className="px-4 py-3 text-gray-700 font-mono text-right text-[13px]">{row.Kms > 0 ? row.Kms : '—'}</td>
+                                                                {/* Recarga */}
+                                                                <td className="px-4 py-3 bg-yellow-50/60 text-gray-500 font-mono text-right text-[13px]">{row.Recarga === 0 ? '0.00' : row.Recarga}</td>
+                                                                {/* Rendimiento */}
+                                                                <td className="px-4 py-3 bg-yellow-50/60 text-gray-700 font-mono text-right text-[13px]">{row.Rendimiento?.toFixed(2) || '—'}</td>
+                                                                {/* Peso de Carga */}
+                                                                <td className="px-4 py-3 bg-yellow-50/60 text-gray-400 text-right text-[13px]">{row.Peso_Carga || '—'}</td>
+                                                                {/* Tipo C/V/PT */}
+                                                                <td className="px-4 py-3 text-center">
+                                                                    <span className={`inline-block text-[11px] font-bold px-2 py-0.5 rounded ${
+                                                                        row.CVP === 'C' ? 'bg-green-100 text-green-700' :
+                                                                        row.CVP === 'PT' ? 'bg-blue-100 text-blue-700' :
+                                                                        'bg-gray-100 text-gray-600'
+                                                                    }`}>{row.CVP || '—'}</span>
+                                                                </td>
+                                                                {/* Remolque */}
+                                                                <td className="px-4 py-3 text-gray-600 text-[13px]">{row.Remolque || '—'}</td>
+                                                                {/* Cliente */}
+                                                                <td className="px-4 py-3 text-gray-800 text-[13px]" title={row.Cliente}>
+                                                                    <div className="truncate max-w-[150px]">{row.Cliente || '—'}</div>
+                                                                </td>
+                                                                {/* Pago por KM */}
+                                                                <td className="px-4 py-3 bg-yellow-50/60 text-gray-700 font-mono text-right text-[13px]">{row.Pago_Por_Km > 0 ? `$${row.Pago_Por_Km.toFixed(2)}` : '—'}</td>
+                                                                {/* Litros a Pago */}
+                                                                <td className="px-4 py-3 bg-yellow-50/60 text-gray-700 font-mono text-right text-[13px]">{row.Litros_A_Pago?.toFixed(2) || '—'}</td>
+                                                                {/* Diesel a Favor */}
+                                                                <td className="px-4 py-3 bg-yellow-50/60 font-mono text-right text-[13px]">
+                                                                    <span className={row.Diesel_A_Favor > 0 ? 'text-green-700 font-semibold' : 'text-red-600'}>
+                                                                        {row.Diesel_A_Favor !== undefined ? row.Diesel_A_Favor.toFixed(2) : '—'}
+                                                                    </span>
+                                                                </td>
+                                                            </tr>
+                                                        </tbody>
+                                                    </table>
+                                                </td>
+                                            </tr>
+                                        )}
+                                    </React.Fragment>
+                                )
+                            })}
                         </tbody>
                     </table>
                 </div>
