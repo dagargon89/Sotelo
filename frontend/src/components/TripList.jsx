@@ -1,7 +1,7 @@
 import TripCard from './TripCard'
+import BoletaCard from './BoletaCard'
 
 export default function TripList({ trips, onUpdate }) {
-    // In a real app, optimize with useMemo/useCallback
     const handleTripUpdate = (updatedTrip) => {
         const newTrips = trips.map(t => t.id === updatedTrip.id ? updatedTrip : t)
         onUpdate(newTrips)
@@ -9,9 +9,10 @@ export default function TripList({ trips, onUpdate }) {
 
     return (
         <div className="space-y-6">
-            {trips.map((trip, idx) => (
-                <TripCard key={trip.id || idx} trip={trip} onUpdate={handleTripUpdate} />
-            ))}
+            {trips.map((trip, idx) => {
+                const CardComponent = trip.source_type === 'GENESIS_BOLETA' ? BoletaCard : TripCard
+                return <CardComponent key={trip.id || idx} trip={trip} onUpdate={handleTripUpdate} />
+            })}
         </div>
     )
 }

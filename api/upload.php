@@ -23,16 +23,16 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 // ==========================================
 
 $UNIT_YIELDS = [
-    'F-002' => 2.37341, 'F-003' => 2.37341, 'F-004' => 2.37341, 'F-005' => 2.37341, 'F-006' => 2.37341, 'F-007' => 2.37341, 
-    'F-008' => 2.37341, 'F-009' => 2.37341, 'F-010' => 2.37341, 'F-011' => 2.37341, 'F-012' => 2.37341, 'F-013' => 2.37341, 
-    'F-014' => 2.37341, 'F-015' => 2.37341, 'F-016' => 2.37341, 'F-017' => 2.37341, 'F-019' => 2.37341, 'F-021' => 2.45098, 
-    'F-022' => 2.45098, 'F-023' => 2.45098, 'F-024' => 2.45098, 'F-025' => 2.45098, 'F-026' => 2.45098, 'F-027' => 2.45098, 
-    'F-028' => 2.45098, 'F-029' => 2.45098, 'F-030' => 2.45098, 'F-031' => 2.45098, 'F-040' => 2.45098, 'F-033' => 2.45098, 
-    'F-034' => 2.60127, 'F-035' => 2.60127, 'F-036' => 2.60127, 'F-045' => 2.11267, 'F-042' => 2.45098, 'F-050' => 2.37341, 
-    'F-051' => 2.11267, 'F-059' => 2.11267, 'F-060' => 2.37341, 'F-061' => 2.37341, 'F-069' => 2.11267, 'F-074' => 2.11267, 
-    'F-082' => 2.11267, 'F-086' => 2.37341, 'F-087' => 2.37341, 'F-088' => 2.37341, 'F-089' => 2.37341, 'F-090' => 2.37341, 
-    'F-091' => 2.37341, 'F-092' => 2.37341, 'F-097' => 2.37341, 'F-098' => 2.37341, 'F-099' => 2.37341, 'F-100' => 2.11267, 
-    'F-107' => 2.37341, 'F-108' => 2.37341, 'F-110' => 2.37341, 
+    'F-002' => 2.37341, 'F-003' => 2.37341, 'F-004' => 2.37341, 'F-005' => 2.37341, 'F-006' => 2.37341, 'F-007' => 2.37341,
+    'F-008' => 2.37341, 'F-009' => 2.37341, 'F-010' => 2.37341, 'F-011' => 2.37341, 'F-012' => 2.37341, 'F-013' => 2.37341,
+    'F-014' => 2.37341, 'F-015' => 2.37341, 'F-016' => 2.37341, 'F-017' => 2.37341, 'F-019' => 2.37341, 'F-021' => 2.45098,
+    'F-022' => 2.45098, 'F-023' => 2.45098, 'F-024' => 2.45098, 'F-025' => 2.45098, 'F-026' => 2.45098, 'F-027' => 2.45098,
+    'F-028' => 2.45098, 'F-029' => 2.45098, 'F-030' => 2.45098, 'F-031' => 2.45098, 'F-040' => 2.45098, 'F-033' => 2.45098,
+    'F-034' => 2.60127, 'F-035' => 2.60127, 'F-036' => 2.60127, 'F-045' => 2.11267, 'F-042' => 2.45098, 'F-050' => 2.37341,
+    'F-051' => 2.11267, 'F-059' => 2.11267, 'F-060' => 2.37341, 'F-061' => 2.37341, 'F-069' => 2.11267, 'F-074' => 2.11267,
+    'F-082' => 2.11267, 'F-086' => 2.37341, 'F-087' => 2.37341, 'F-088' => 2.37341, 'F-089' => 2.37341, 'F-090' => 2.37341,
+    'F-091' => 2.37341, 'F-092' => 2.37341, 'F-097' => 2.37341, 'F-098' => 2.37341, 'F-099' => 2.37341, 'F-100' => 2.11267,
+    'F-107' => 2.37341, 'F-108' => 2.37341, 'F-110' => 2.37341,
     'F-111' => 2.701058, 'F-112' => 2.701058, 'F-121' => 2.701058,
 ];
 
@@ -216,12 +216,10 @@ function get_route_kms(string $origin, string $dest, $row_kms = 0): float {
     $dest_up = strtoupper(trim($dest));
     $key     = "$org_up|$dest_up";
 
-    // 1. Exact client-named route table
     if (isset($ROUTE_DISTANCES_CLIENTS[$key])) {
         return (float)$ROUTE_DISTANCES_CLIENTS[$key];
     }
 
-    // 2. Normalize to city names
     $org_norm = $org_up;
     if (strpos($org_up, 'JRZ') !== false || strpos($org_up, 'JUAREZ') !== false || strpos($org_up, 'BASE') !== false) $org_norm = 'JUAREZ';
     if (strpos($org_up, 'EL PASO') !== false || strpos($org_up, 'RIO BRAVO') !== false) $org_norm = 'EL PASO';
@@ -237,7 +235,6 @@ function get_route_kms(string $origin, string $dest, $row_kms = 0): float {
         return (float)$ROUTE_DISTANCES[$key_norm];
     }
 
-    // 3. Pacifico city table
     $pac_org  = (strpos($org_norm,  'OBR') !== false) ? 'OBREGON' : $org_norm;
     $pac_dest = (strpos($dest_norm, 'OBR') !== false) ? 'OBREGON' : $dest_norm;
     $key_pac  = "$pac_org|$pac_dest";
@@ -245,7 +242,6 @@ function get_route_kms(string $origin, string $dest, $row_kms = 0): float {
         return (float)$ROUTE_DISTANCES_PACIFICO[$key_pac];
     }
 
-    // 4. Fallback to row kms from Genesis
     $val = (float)$row_kms;
     if ($val > 0) return $val;
     return 0.0;
@@ -263,219 +259,172 @@ function get_payroll_week(?int $ts): int {
     return (int)date('W', $ts) + 1;
 }
 
-function bundle_movements(array $rows): array {
-    if (empty($rows)) return [];
+// ==========================================
+// BOLETA-BASED PROCESSING
+// ==========================================
 
-    usort($rows, function ($a, $b) {
-        $ta = parse_ts($a['Arranque'] ?? '');
-        $tb = parse_ts($b['Arranque'] ?? '');
-        return ($ta ?? 0) <=> ($tb ?? 0);
-    });
-
-    $trips       = [];
-    $current     = [];
-
-    foreach ($rows as $row) {
-        $current[] = $row;
-        $dest = strtoupper(trim($row['Destino'] ?? ''));
-        $hub  = strpos($dest, 'JUAREZ')     !== false
-             || strpos($dest, 'JRZ')        !== false
-             || strpos($dest, 'BASE SOTELO') !== false
-             || strpos($dest, 'EL PASO')    !== false
-             || strpos($dest, 'PRECOS')      !== false;
-        if ($hub) {
-            $trips[] = $current;
-            $current = [];
-        }
-    }
-    if (!empty($current)) $trips[] = $current;
-    return $trips;
-}
-
-function trip_timestamps(array $trip): array {
-    $start = null;
-    $end   = null;
-    foreach ($trip as $row) {
-        $ts = parse_ts($row['Arranque']       ?? '');
-        $te = parse_ts($row['Arribo destino'] ?? '');
-        if ($ts && ($start === null || $ts < $start)) $start = $ts;
-        if ($te && ($end   === null || $te > $end))   $end   = $te;
-    }
-    return [$start, $end];
-}
-
-function calculate_chihuahua_payroll(array $trips, string $driver_name): array {
+/**
+ * Process rows grouped by Boleta number.
+ * Each unique boleta becomes one card entry.
+ */
+function process_by_boleta(array $rows, string $driver_name): array {
     global $UNIT_YIELDS;
+
+    // Group by boleta
+    $byBoleta = [];
+    foreach ($rows as $row) {
+        $boleta = trim($row['Boleta'] ?? '');
+        if ($boleta === '') $boleta = 'SIN_BOLETA';
+        $byBoleta[$boleta][] = $row;
+    }
+
     $entries = [];
 
-    foreach ($trips as $i => $trip) {
-        if (empty($trip)) continue;
+    foreach ($byBoleta as $boleta => $boletaRows) {
+        // Sort rows by Arranque date
+        usort($boletaRows, function ($a, $b) {
+            $ta = parse_ts($a['Arranque'] ?? '');
+            $tb = parse_ts($b['Arranque'] ?? '');
+            return ($ta ?? 0) <=> ($tb ?? 0);
+        });
 
-        [$start_ts, $end_ts] = trip_timestamps($trip);
-        $unit       = trim($trip[0]['Tractor'] ?? '');
+        // First row metadata
+        $firstRow   = $boletaRows[0];
+        $unit       = trim($firstRow['Tractor'] ?? '');
         $unit_yield = $UNIT_YIELDS[$unit] ?? 2.37341;
 
-        $base_pay    = 0.0;
-        $leg_details = [];
-        $legs_data   = [];
-        $has_foraneo = false;
+        // Detect Pacifico
+        $is_pac = false;
+        foreach ($boletaRows as $row) {
+            if (is_pacifico_loc($row['Origen'] ?? '') || is_pacifico_loc($row['Destino'] ?? '')) {
+                $is_pac = true;
+                break;
+            }
+        }
 
-        // Pass 1: base pay per leg
-        foreach ($trip as $row) {
-            $origin   = strtoupper(trim($row['Origen']        ?? ''));
-            $dest     = strtoupper(trim($row['Destino']       ?? ''));
-            $status   = strtoupper(trim($row['Estatus flete'] ?? ''));
-            $tipo     = strtoupper(trim($row['Tipo']          ?? ''));
-            $coments  = strtoupper(trim($row['Comentarios']   ?? ''));
+        // Compute financial values from rows
+        $base_pay           = 0.0;
+        $total_kms_raw      = 0.0;
+        $total_kms_adjusted = 0.0;
+        $has_foraneo        = false;
+        $start_ts           = null;
+        $end_ts             = null;
+        $table_rows         = [];
 
+        foreach ($boletaRows as $row) {
+            $origin  = strtoupper(trim($row['Origen']  ?? ''));
+            $dest    = strtoupper(trim($row['Destino'] ?? ''));
+            $status  = strtoupper(trim($row['Estatus flete'] ?? ''));
+            $tipo    = strtoupper(trim($row['Tipo']    ?? ''));
+            $coments = strtoupper(trim($row['Comentarios'] ?? ''));
+
+            // Timestamps
+            $ts_start = parse_ts($row['Arranque'] ?? '');
+            $ts_end   = parse_ts($row['Arribo destino'] ?? '');
+            if ($ts_start && ($start_ts === null || $ts_start < $start_ts)) $start_ts = $ts_start;
+            if ($ts_end   && ($end_ts   === null || $ts_end   > $end_ts))   $end_ts   = $ts_end;
+
+            // Loaded determination
             $is_loaded = ($status === 'FACTURADO')
-                      || in_array($tipo, ['IMP-01', 'IMP-02', 'EXP-01', 'EXP-02', 'FOR-01', 'FOR-02', 'MDC-01', 'MDC-02', 'TRI-01', 'TRI-02', 'TRE-01', 'TRE-02', 'LOC-01', 'LOC-02'], true);
+                      || in_array($tipo, ['IMP-01','IMP-02','EXP-01','EXP-02','FOR-01','FOR-02','MDC-01','MDC-02','TRI-01','TRI-02','TRE-01','TRE-02','LOC-01','LOC-02'], true);
             if (strpos($coments, 'VACIO') !== false
              || strpos($coments, 'VASIO') !== false
              || $status === 'COMPLETO'
-             || $tipo   === 'PTT-00' || $tipo === 'LOC-00' || $tipo === 'FOR-00' || $tipo === 'IMP-00' || $tipo === 'EXP-00') {
+             || $tipo === 'PTT-00' || $tipo === 'LOC-00' || $tipo === 'FOR-00' || $tipo === 'IMP-00' || $tipo === 'EXP-00') {
                 $is_loaded = false;
             }
 
             if (strpos($tipo, 'FOR') !== false || strpos($origin, 'CHIH') !== false || strpos($dest, 'CHIH') !== false) {
-                 $has_foraneo = true;
+                $has_foraneo = true;
             }
 
-            $rate      = $is_loaded ? 110.00 : 55.00;
-            $base_pay += $rate;
-            $leg_details[] = "{$origin}->{$dest} (\${$rate})";
-
-            $raw_kms    = get_route_kms($origin, $dest, $row['Kms'] ?? 0);
-            $legs_data[] = [
-                'Origin'      => $origin,
-                'Destination' => $dest,
-                'Type'        => $tipo,
-                'Status'      => $status,
-                'Kms'         => (float)$raw_kms,
-                'Is_Loaded'   => $is_loaded,
-            ];
-        }
-
-        // Pass 2: diesel allowance with ELP deduction
-        $total_kms_genesis  = 0.0;
-        $total_kms_adjusted = 0.0;
-        foreach ($trip as $row) {
-            $origin  = strtoupper(trim($row['Origen']  ?? ''));
-            $dest    = strtoupper(trim($row['Destino'] ?? ''));
+            // KM calculations
             $raw_kms = get_route_kms($origin, $dest, $row['Kms'] ?? 0);
-
             $kms_adj = $raw_kms;
-            
+
             $is_cruce = false;
             if (strpos($origin, 'EL PASO') !== false && (strpos($dest, 'JUAREZ') !== false || strpos($dest, 'RIO BRAVO') !== false || strpos($dest, 'ZARAGOZA') !== false)) $is_cruce = true;
             if (strpos($dest, 'EL PASO') !== false && (strpos($origin, 'JUAREZ') !== false || strpos($origin, 'RIO BRAVO') !== false || strpos($origin, 'ZARAGOZA') !== false)) $is_cruce = true;
+            if ($is_cruce && $raw_kms >= 40.0) $kms_adj = max(0.0, $raw_kms - 40.0);
 
-            if ($is_cruce && $raw_kms >= 40.0) {
-                $kms_adj = max(0.0, $raw_kms - 40.0);
+            $total_kms_raw      += $raw_kms;
+            $total_kms_adjusted += $kms_adj;
+
+            // Base pay (Pacifico has flat rate, Chihuahua has leg rates)
+            if (!$is_pac) {
+                $base_pay += $is_loaded ? 110.00 : 55.00;
             }
 
-            $total_kms_genesis  += $raw_kms;
-            $total_kms_adjusted += $kms_adj;
-        }
+            // Determine C/V/PT label
+            $cvpt = 'V'; // Vacío by default
+            if (strpos($tipo, 'PT') !== false || strpos($tipo, 'PTT') !== false) {
+                $cvpt = 'PT';
+            } elseif ($is_loaded) {
+                $cvpt = 'C';
+            }
 
-        $allowed_liters = $total_kms_adjusted / $unit_yield;
+            // Per-row financial calculations
+            $leg_pay       = $is_pac ? 0.0 : ($is_loaded ? 110.00 : 55.00);
+            $litros_pago   = $unit_yield > 0 ? round($kms_adj / $unit_yield, 2) : 0.0;
+            $diesel_favor  = $litros_pago; // starts equal to allowed (recarga = 0)
 
-        $entries[] = [
-            'id'                  => "{$driver_name}_{$i}_" . ($start_ts ?? 0),
-            'Trip_ID'             => 'Trip_' . ($i + 1),
-            'Driver'              => $driver_name,
-            'Unit'                => $unit,
-            'Start_Date'          => $start_ts ? date('Y-m-d H:i', $start_ts) : 'Unknown',
-            'End_Date'            => $end_ts   ? date('Y-m-d H:i', $end_ts)   : 'In Progress',
-            'Route'               => implode(' | ', $leg_details),
-            'Total_Kms_Raw'       => (float)$total_kms_genesis,
-            'Total_Kms_Paid'      => (float)$total_kms_adjusted,
-            'Allowed_Liters'      => round((float)$allowed_liters, 2),
-            'Yield_Used'          => (float)$unit_yield,
-            'Base_Pay'            => (float)$base_pay,
-            'Diesel_Rate'         => $has_foraneo ? 14.85 : 14.50,
-            'Suggested_Cost'      => round((float)$allowed_liters * ($has_foraneo ? 14.85 : 14.50), 2),
-            'Manual_Refuel_Liters'=> 0.0,
-            'Manual_Actual_Price_Per_Liter' => 0.0,
-            'Payroll_Week'        => get_payroll_week($start_ts),
-            'Status'              => 'NEEDS_INPUT',
-            'Is_Pacifico'         => false,
-            'Manual_Pac_Loaded'   => false,
-            'Manual_Pac_Bono_Sierra'     => false,
-            'Manual_Pac_Bono_Doble'      => false,
-            'Manual_Pac_Estancia_Obregon'=> 0,
-            'Manual_Pac_Estancia_Mochis' => 0,
-            'Legs'                => $legs_data,
-        ];
-    }
-    return $entries;
-}
-
-function calculate_pacifico_payroll(array $trips, string $driver_name): array {
-    global $UNIT_YIELDS;
-    $entries = [];
-
-    foreach ($trips as $i => $trip) {
-        if (empty($trip)) continue;
-
-        [$start_ts, $end_ts] = trip_timestamps($trip);
-        $unit       = trim($trip[0]['Tractor'] ?? '');
-        $unit_yield = $UNIT_YIELDS[$unit] ?? 2.37341;
-
-        $leg_details = [];
-        $legs_data   = [];
-        $total_kms   = 0.0;
-
-        foreach ($trip as $row) {
-            $origin  = strtoupper(trim($row['Origen']        ?? ''));
-            $dest    = strtoupper(trim($row['Destino']       ?? ''));
-            $tipo    = strtoupper(trim($row['Tipo']          ?? ''));
-            $status  = strtoupper(trim($row['Estatus flete'] ?? ''));
-
-            $raw_kms    = get_route_kms($origin, $dest, $row['Kms'] ?? 0);
-            $total_kms += $raw_kms;
-
-            $leg_details[] = "{$origin}->{$dest} ({$raw_kms}km)";
-            $legs_data[]   = [
-                'Origin'      => $origin,
-                'Destination' => $dest,
-                'Type'        => $tipo,
-                'Status'      => $status,
-                'Kms'         => (float)$raw_kms,
-                'Is_Loaded'   => true,
+            // Build table row for frontend
+            $table_rows[] = [
+                'Folio_Liquidacion' => trim($row['Factura'] ?? ''),
+                'Coordenada'        => trim($row['Coordenada'] ?? ''),
+                'Fecha_Salida'      => trim($row['Arranque'] ?? ''),
+                'Fecha_Llegada'     => trim($row['Arribo destino'] ?? ''),
+                'Origen'            => trim($row['Origen'] ?? ''),
+                'Destino'           => trim($row['Destino'] ?? ''),
+                'Kms'               => $raw_kms,
+                'Recarga'           => 0.0,
+                'Rendimiento'       => (float)$unit_yield,
+                'Peso_Carga'        => '',
+                'CVP'               => $cvpt,
+                'Remolque'          => trim($row['Remolque'] ?? ''),
+                'Cliente'           => trim($row['Cliente'] ?? ''),
+                'Pago_Por_Km'       => $leg_pay,
+                'Litros_A_Pago'     => $litros_pago,
+                'Diesel_A_Favor'    => $diesel_favor,
+                'Tipo'              => trim($row['Tipo'] ?? ''),
+                'Estatus_Flete'     => trim($row['Estatus flete'] ?? ''),
+                'Is_Loaded'         => $is_loaded,
             ];
         }
 
-        $allowed_liters = $total_kms / $unit_yield;
+        $allowed_liters = $total_kms_adjusted / ($unit_yield > 0 ? $unit_yield : 2.37341);
+        $diesel_rate    = $is_pac ? 16.00 : ($has_foraneo ? 14.85 : 14.50);
 
         $entries[] = [
-            'id'                         => "{$driver_name}_{$i}_" . ($start_ts ?? 0),
-            'Trip_ID'                    => 'Trip_' . ($i + 1),
+            'id'                         => "{$driver_name}_{$boleta}",
+            'source_type'                => 'GENESIS_BOLETA',
+            'Boleta'                     => $boleta,
             'Driver'                     => $driver_name,
             'Unit'                       => $unit,
-            'Start_Date'                 => $start_ts ? date('Y-m-d H:i', $start_ts) : 'Unknown',
-            'End_Date'                   => $end_ts   ? date('Y-m-d H:i', $end_ts)   : 'In Progress',
-            'Route'                      => implode(' | ', $leg_details),
-            'Total_Kms_Raw'              => (float)$total_kms,
-            'Total_Kms_Paid'             => (float)$total_kms,
+            'Start_Date'                 => $start_ts ? date('Y-m-d H:i', $start_ts) : 'Desconocido',
+            'End_Date'                   => $end_ts   ? date('Y-m-d H:i', $end_ts)   : 'En Progreso',
+            'Total_Kms_Raw'              => (float)$total_kms_raw,
+            'Total_Kms_Paid'             => (float)$total_kms_adjusted,
             'Allowed_Liters'             => round((float)$allowed_liters, 2),
             'Yield_Used'                 => (float)$unit_yield,
-            'Base_Pay'                   => 0.0,
-            'Diesel_Rate'                => 16.00,
-            'Suggested_Cost'             => round((float)$allowed_liters * 16.00, 2),
+            'Base_Pay'                   => (float)$base_pay,
+            'Diesel_Rate'                => $diesel_rate,
+            'Suggested_Cost'             => round((float)$allowed_liters * $diesel_rate, 2),
             'Manual_Refuel_Liters'       => 0.0,
             'Manual_Actual_Price_Per_Liter' => 0.0,
+            'Manual_Bono_Quimico'        => false,
             'Payroll_Week'               => get_payroll_week($start_ts),
             'Status'                     => 'NEEDS_INPUT',
-            'Is_Pacifico'                => true,
+            'Is_Pacifico'                => $is_pac,
             'Manual_Pac_Loaded'          => false,
             'Manual_Pac_Bono_Sierra'     => false,
             'Manual_Pac_Bono_Doble'      => false,
             'Manual_Pac_Estancia_Obregon'=> 0,
             'Manual_Pac_Estancia_Mochis' => 0,
-            'Legs'                       => $legs_data,
+            'Rows'                       => $table_rows,
         ];
     }
+
     return $entries;
 }
 
@@ -527,6 +476,11 @@ try {
     }
     $headers = array_map('trim', $headers);
 
+    // Strip BOM from first header if present
+    if (isset($headers[0])) {
+        $headers[0] = ltrim($headers[0], "\xEF\xBB\xBF\xFF\xFE");
+    }
+
     $rows = [];
     while (($row = fgetcsv($handle)) !== false) {
         if (count($row) === count($headers)) {
@@ -541,6 +495,9 @@ try {
         exit;
     }
 
+    // Check if CSV has the Boleta column (Genesis with boleta format)
+    $hasBoleta = in_array('Boleta', $headers, true);
+
     // Group by driver
     $byDriver = [];
     foreach ($rows as $row) {
@@ -550,24 +507,20 @@ try {
     }
 
     $results = [];
-    foreach ($byDriver as $driver => $driverRows) {
-        $trips = bundle_movements($driverRows);
 
-        $is_pac = false;
-        foreach ($trips as $trip) {
-            foreach ($trip as $row) {
-                if (is_pacifico_loc($row['Origen'] ?? '') || is_pacifico_loc($row['Destino'] ?? '')) {
-                    $is_pac = true;
-                    break 2;
-                }
-            }
+    if ($hasBoleta) {
+        // New flow: group by Conductor > Boleta
+        foreach ($byDriver as $driver => $driverRows) {
+            $entries = process_by_boleta($driverRows, $driver);
+            $results = array_merge($results, $entries);
         }
-
-        $entries = $is_pac
-            ? calculate_pacifico_payroll($trips, $driver)
-            : calculate_chihuahua_payroll($trips, $driver);
-
-        $results = array_merge($results, $entries);
+    } else {
+        // Legacy flow: bundle movements into trips (kept for backwards compat)
+        foreach ($byDriver as $driver => $driverRows) {
+            // Simple bundling fallback
+            $entries = process_by_boleta($driverRows, $driver);
+            $results = array_merge($results, $entries);
+        }
     }
 
     echo json_encode(['trips' => $results]);
