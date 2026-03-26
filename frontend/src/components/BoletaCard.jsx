@@ -42,10 +42,41 @@ export default function BoletaCard({ trip, onUpdate }) {
             ...newRowsData[rowIndex],
             [field]: value
         }
+
+        // Auto-calculate dependent fields
+        const calculatedData = calculateDependentFields(newRowsData[rowIndex])
+        newRowsData[rowIndex] = {
+            ...newRowsData[rowIndex],
+            ...calculatedData
+        }
+
         setRowsData(newRowsData)
 
         // Recalculate based on changed values
         recalculateRow(rowIndex, newRowsData[rowIndex])
+    }
+
+    const calculateDependentFields = (rowData) => {
+        // Constants
+        const DIESEL_PRICE = 14.85  // Precio por litro según documento
+
+        const kms = parseFloat(rowData.Kms) || 0
+        const rendimiento = parseFloat(rowData.Rendimiento) || 2.37341  // Default yield
+        const recarga = parseFloat(rowData.Recarga) || 0
+
+        // Fórmula: Litros Permitidos = KMS / Rendimiento
+        const litrosPermitidos = rendimiento > 0 ? kms / rendimiento : 0
+
+        // Fórmula: Litros Ahorrados = Litros Permitidos - Recarga Real
+        const litrosAhorrados = litrosPermitidos - recarga
+
+        // Fórmula: Diesel a Favor = Litros Ahorrados × $14.85
+        const dieselAFavor = litrosAhorrados * DIESEL_PRICE
+
+        return {
+            Litros_A_Pago: parseFloat(litrosPermitidos.toFixed(2)),
+            Diesel_A_Favor: parseFloat(dieselAFavor.toFixed(2))
+        }
     }
 
     const recalculateRow = (rowIndex, rowData) => {
@@ -99,18 +130,55 @@ export default function BoletaCard({ trip, onUpdate }) {
     const rows = trip.Rows || []
     const initials = trip.Driver ? trip.Driver.substring(0, 2).toUpperCase() : 'DR'
 
+    // Helper function to get invoice number with multiple possible field names
+    const getFactura = (row) => {
+        // Try different possible field names
+        return row.Factura ||
+               row.factura ||
+               row.Invoice ||
+               row.invoice ||
+               row.Folio_Liquidacion ||
+               row.folio_liquidacion ||
+               row.bill ||
+               row.Bill ||
+               ''
+    }
+
+    // Helper function to get coordenada
+    const getCoordenada = (row) => {
+        return row.Coordenada ||
+               row.coordenada ||
+               row.Coordinate ||
+               row.coordinate ||
+               ''
+    }
+
     // Debug: Log rows data to check what we're receiving
     React.useEffect(() => {
-        if (rows.length > 0) {
-            console.log(`Boleta ${trip.Boleta} - Rows:`, rows)
-            console.log(`Boleta ${trip.Boleta} - Number of rows:`, rows.length)
+        if (rows.length > 0 && trip.Boleta === 48531) {
+            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+            console.log(`🔍 DEBUG Boleta ${trip.Boleta}`)
+            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
+            console.log(`📦 Full Trip Object:`, trip)
+            console.log(`📋 Rows Array (${rows.length} rows):`, rows)
+            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
             rows.forEach((row, idx) => {
-                console.log(`Row ${idx}:`, {
-                    Factura: row.Factura,
-                    Coordenada: row.Coordenada,
-                    Origen: row.Origen,
-                    Destino: row.Destino
+                console.log(`📄 Row ${idx}:`)
+                console.log('   All keys:', Object.keys(row))
+                console.log('   Full object:', row)
+                console.log('   Factura attempts:', {
+                    'row.Factura': row.Factura,
+                    'row.factura': row.factura,
+                    'row.Invoice': row.Invoice,
+                    'row.Folio_Liquidacion': row.Folio_Liquidacion,
+                    'getFactura()': getFactura(row)
                 })
+                console.log('   Coordenada attempts:', {
+                    'row.Coordenada': row.Coordenada,
+                    'row.coordenada': row.coordenada,
+                    'getCoordenada()': getCoordenada(row)
+                })
+                console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
             })
         }
     }, [trip.Boleta, rows])
@@ -200,8 +268,12 @@ export default function BoletaCard({ trip, onUpdate }) {
                                             className={`cursor-pointer ${i % 2 === 0 ? 'bg-white' : 'bg-gray-50/60'} hover:bg-blue-50/40 transition-colors border-b border-gray-100`}
                                             onClick={() => toggleRow(i)}
                                         >
-                                            <td className="px-4 py-3 text-gray-700 font-mono text-[14px]">{row.Factura || '—'}</td>
-                                            <td className="px-4 py-3 text-gray-700 font-mono text-[14px]">{row.Coordenada || '—'}</td>
+                                            <td className="px-4 py-3 text-gray-700 font-mono text-[14px]">
+                                                {getFactura(row) || <span className="text-gray-400 italic">Sin factura</span>}
+                                            </td>
+                                            <td className="px-4 py-3 text-gray-700 font-mono text-[14px]">
+                                                {getCoordenada(row) || '—'}
+                                            </td>
                                             <td className="px-4 py-3 text-gray-600 text-[14px]">{row.Fecha_Salida || '—'}</td>
                                             <td className="px-4 py-3 text-gray-600 text-[14px]">{row.Fecha_Llegada || '—'}</td>
                                             <td className="px-4 py-3 text-gray-800 font-medium text-[14px]" title={row.Origen}>
@@ -230,8 +302,8 @@ export default function BoletaCard({ trip, onUpdate }) {
                                                                 <th className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wider">Remolque</th>
                                                                 <th className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wider">Cliente</th>
                                                                 <th className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wider bg-yellow-400 text-slate-900 text-right">Pago/KM ✎</th>
-                                                                <th className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wider bg-yellow-400 text-slate-900 text-right">Litros Pago ✎</th>
-                                                                <th className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wider bg-yellow-400 text-slate-900 text-right">Diesel Favor ✎</th>
+                                                                <th className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wider bg-green-400 text-slate-900 text-right">Litros Pago 🔢</th>
+                                                                <th className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wider bg-green-400 text-slate-900 text-right">Diesel Favor 🔢</th>
                                                             </tr>
                                                         </thead>
                                                         <tbody>
@@ -307,29 +379,21 @@ export default function BoletaCard({ trip, onUpdate }) {
                                                                         className="w-full px-2 py-1 text-[13px] text-right font-mono border border-yellow-300 rounded focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
                                                                     />
                                                                 </td>
-                                                                {/* Litros a Pago - Editable */}
-                                                                <td className="px-4 py-2 bg-yellow-50/60">
-                                                                    <input
-                                                                        type="number"
-                                                                        step="0.01"
-                                                                        value={rowsData[i]?.Litros_A_Pago || ''}
-                                                                        onChange={(e) => handleRowFieldChange(i, 'Litros_A_Pago', parseFloat(e.target.value) || 0)}
-                                                                        className="w-full px-2 py-1 text-[13px] text-right font-mono border border-yellow-300 rounded focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
-                                                                    />
+                                                                {/* Litros a Pago - Calculado automáticamente */}
+                                                                <td className="px-4 py-3 bg-green-50/60">
+                                                                    <div className="text-[13px] text-right font-mono font-semibold text-gray-900">
+                                                                        {rowsData[i]?.Litros_A_Pago?.toFixed(2) || '0.00'}
+                                                                    </div>
                                                                 </td>
-                                                                {/* Diesel a Favor - Editable */}
-                                                                <td className="px-4 py-2 bg-yellow-50/60">
-                                                                    <input
-                                                                        type="number"
-                                                                        step="0.01"
-                                                                        value={rowsData[i]?.Diesel_A_Favor || ''}
-                                                                        onChange={(e) => handleRowFieldChange(i, 'Diesel_A_Favor', parseFloat(e.target.value) || 0)}
-                                                                        className={`w-full px-2 py-1 text-[13px] text-right font-mono font-semibold border rounded focus:ring-2 focus:ring-yellow-500 focus:border-transparent ${
-                                                                            (rowsData[i]?.Diesel_A_Favor || 0) > 0
-                                                                                ? 'text-green-700 border-green-300'
-                                                                                : 'text-red-600 border-red-300'
-                                                                        }`}
-                                                                    />
+                                                                {/* Diesel a Favor - Calculado automáticamente */}
+                                                                <td className="px-4 py-3 bg-green-50/60">
+                                                                    <div className={`text-[13px] text-right font-mono font-bold ${
+                                                                        (rowsData[i]?.Diesel_A_Favor || 0) > 0
+                                                                            ? 'text-green-700'
+                                                                            : 'text-red-600'
+                                                                    }`}>
+                                                                        ${rowsData[i]?.Diesel_A_Favor?.toFixed(2) || '0.00'}
+                                                                    </div>
                                                                 </td>
                                                             </tr>
                                                         </tbody>
