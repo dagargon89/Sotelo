@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mockup Nómina Viaje - Tendencia 2026</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
+                    },
+                    colors: {
+                        surface: '#fcfcfd',
+                        panel: '#ffffff',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #f3f4f6; 
+            color: #111827;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.6);
+        }
+        .subtle-shadow {
+            box-shadow: 0 4px 40px -8px rgba(0, 0, 0, 0.05), inset 0 0 0 1px rgba(255,255,255,0.5);
+        }
+        /* Hide scrollbar for clean look */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-thumb { background: #e5e7eb; border-radius: 10px; }
+    </style>
+</head>
+<body class="p-4 md:p-8 antialiased">
+
+    <div class="max-w-6xl mx-auto">
+        <!-- Dashboard Header Minimalist -->
+        <h1 class="text-2xl font-semibold tracking-tight text-gray-900 mb-8 flex items-center justify-between">
+            <span>Control de Nómina</span>
+            <span class="text-sm font-medium text-gray-500 bg-gray-100 px-3 py-1 rounded-full">Semana 45</span>
+        </h1>
+
+        <!-- 2026 Trip Card Design -->
+        <div class="glass-panel subtle-shadow rounded-3xl overflow-hidden mb-8 transition-all hover:shadow-lg">
+            
+            <!-- Header Section -->
+            <div class="px-8 py-6 flex flex-wrap justify-between items-center border-b border-gray-100/50">
+                <div class="flex items-center gap-5">
+                    <!-- Clean minimal avatar -->
+                    <div class="w-12 h-12 rounded-2xl bg-gray-100 flex items-center justify-center text-gray-700 font-semibold text-lg border border-gray-200">
+                        MV
+                    </div>
+                    <div>
+                        <h2 class="text-[19px] font-semibold tracking-tight text-gray-900">Manuel Marcelino Valles Hernández</h2>
+                        <div class="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1 text-[13px] text-gray-500">
+                            <span class="font-medium text-gray-700 bg-gray-100/80 px-2 py-0.5 rounded-md">F-030</span>
+                            <span class="font-medium text-gray-700 bg-gray-100/80 px-2 py-0.5 rounded-md">Remolque: FSM53921</span>
+                            <span>Trip_36</span>
+                            <span class="w-1 h-1 rounded-full bg-gray-300"></span>
+                            <span>Cliente: Grupo Yazaki</span>
+                            <span class="w-1 h-1 rounded-full bg-gray-300"></span>
+                            <span>Obt. 27, 2025</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Status Minimal -->
+                <div class="flex items-center gap-2 mt-4 sm:mt-0">
+                    <span class="relative flex h-2.5 w-2.5">
+                      <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                      <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500"></span>
+                    </span>
+                    <span class="text-[13px] font-medium text-gray-700">Captura Pendiente</span>
+                </div>
+            </div>
+
+            <!-- Route & Grid Matrix Section -->
+            <div class="flex flex-col xl:flex-row divide-y xl:divide-y-0 xl:divide-x divide-gray-100/50">
+                
+                <!-- Route Minimal -->
+                <div class="px-8 py-8 xl:w-5/12 flex flex-col justify-center">
+                    <div class="flex items-start gap-4 mb-6">
+                        <div class="flex flex-col items-center mt-1.5">
+                            <div class="w-2 h-2 rounded-full bg-gray-400"></div>
+                            <div class="w-px h-10 bg-gradient-to-b from-gray-300 to-gray-200 my-1"></div>
+                            <div class="w-2 h-2 rounded-full bg-gray-900 shadow-[0_0_0_4px_rgba(0,0,0,0.05)]"></div>
+                        </div>
+                        <div>
+                            <div class="mb-5">
+                                <p class="text-[11px] font-medium text-gray-400 uppercase tracking-widest mb-0.5">Origen</p>
+                                <p class="text-[15px] font-medium text-gray-900">Planta Yazaki Componentes</p>
+                            </div>
+                            <div>
+                                <p class="text-[11px] font-medium text-gray-400 uppercase tracking-widest mb-0.5">Destino Final</p>
+                                <p class="text-[15px] font-medium text-gray-900">Base Sotelo Chihuahua</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex gap-8 bg-gray-50/50 p-4 rounded-2xl border border-gray-100/80 mt-auto">
+                        <div>
+                            <p class="text-[11px] text-gray-500 uppercase font-medium tracking-wide mb-1">Distancia</p>
+                            <p class="text-xl font-semibold text-gray-900">375 <span class="text-sm font-normal text-gray-500">km</span></p>
+                        </div>
+                        <div class="w-px bg-gray-200/60"></div>
+                        <div>
+                            <p class="text-[11px] text-gray-500 uppercase font-medium tracking-wide mb-1">Rendimiento</p>
+                            <p class="text-xl font-semibold text-gray-900">2.45 <span class="text-sm font-normal text-gray-500">km/l</span></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Financial Clean Grid -->
+                <div class="px-8 py-8 xl:w-7/12">
+                    <h3 class="text-[13px] font-medium text-gray-900 mb-6 flex items-center gap-2">
+                         Cálculo de Nómina
+                    </h3>
+                    
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                        <!-- Static Values -->
+                        <div class="bg-gray-50/80 p-4 rounded-2xl">
+                            <p class="text-[11px] text-gray-500 font-medium mb-1">BASE</p>
+                            <p class="font-semibold text-gray-900">$0.00</p>
+                        </div>
+                        <div class="bg-gray-50/80 p-4 rounded-2xl">
+                            <p class="text-[11px] text-gray-500 font-medium mb-1">LT. PERMITIDOS</p>
+                            <p class="font-semibold text-gray-900">153 L</p>
+                        </div>
+                        <div class="bg-gray-50/80 p-4 rounded-2xl">
+                            <p class="text-[11px] text-gray-500 font-medium mb-1">COSTO ESPECIAL</p>
+                            <p class="font-semibold text-gray-900">$2,448.00</p>
+                        </div>
+                        <div class="bg-gray-900 p-4 rounded-2xl shadow-lg relative overflow-hidden">
+                            <div class="absolute top-0 right-0 p-4 opacity-10">
+                                <i class="fas fa-check-circle text-4xl text-white"></i>
+                            </div>
+                            <p class="text-[11px] text-gray-300 font-medium mb-1 relative z-10">INCENTIVO</p>
+                            <p class="font-semibold text-white text-lg relative z-10">+$2,448.00</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <!-- Interactive Clean Form Elements -->
+                        <div>
+                            <label class="block text-[11px] font-semibold text-gray-700 mb-2">LITROS REALES</label>
+                            <input type="text" placeholder="0.00" class="w-full bg-white border border-gray-200 text-gray-900 text-[15px] font-medium rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-transparent block px-4 py-2.5 transition-all shadow-sm" />
+                        </div>
+                        <div>
+                            <label class="block text-[11px] font-semibold text-gray-700 mb-2">PRECIO POR LITRO</label>
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-500">$</span>
+                                <input type="text" value="16.00" class="w-full bg-white border border-gray-200 text-gray-900 text-[15px] font-medium rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-transparent block pl-8 pr-4 py-2.5 transition-all shadow-sm" />
+                            </div>
+                        </div>
+                        <div class="flex flex-col justify-end pb-1">
+                            <label class="flex items-center gap-3 cursor-pointer p-2 rounded-xl hover:bg-gray-50 transition-colors">
+                                <div class="relative flex items-center">
+                                    <input type="checkbox" class="peer sr-only">
+                                    <div class="w-10 h-6 bg-gray-200 rounded-full peer peer-focus:ring-2 peer-focus:ring-gray-900 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gray-900"></div>
+                                </div>
+                                <span class="text-[13px] font-medium text-gray-700">Aplica Químico</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detailed Table Section (Data from CSV) -->
+            <div class="border-t border-gray-100/50">
+                <div class="px-8 py-4 bg-gray-50/30 flex items-center justify-between cursor-pointer group" onclick="document.getElementById('coordenadas-table').classList.toggle('hidden')">
+                    <h4 class="text-[13px] font-semibold text-gray-800 flex items-center gap-2">
+                        <i class="fas fa-list-ul text-gray-400"></i> Desglose de Trayectos (Coordenadas)
+                    </h4>
+                    <span class="text-[11px] font-medium text-gray-500 bg-white border border-gray-200 px-3 py-1 rounded-full group-hover:bg-gray-100 transition-colors">Mostrar / Ocultar</span>
+                </div>
+                
+                <div id="coordenadas-table" class="hidden px-8 pb-8 pt-4">
+                    <div class="overflow-x-auto rounded-2xl border border-gray-100">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                                <tr class="bg-gray-50 border-b border-gray-100">
+                                    <th class="p-4 text-[11px] font-semibold text-gray-500 uppercase">Factura / Guía</th>
+                                    <th class="p-4 text-[11px] font-semibold text-gray-500 uppercase">Coordenada</th>
+                                    <th class="p-4 text-[11px] font-semibold text-gray-500 uppercase">Estatus</th>
+                                    <th class="p-4 text-[11px] font-semibold text-gray-500 uppercase">Salida / Arribo</th>
+                                    <th class="p-4 text-[11px] font-semibold text-gray-500 uppercase">Cliente</th>
+                                </tr>
+                            </thead>
+                            <tbody class="text-[13px] text-gray-700 divide-y divide-gray-50">
+                                <tr class="hover:bg-gray-50/50 transition-colors">
+                                    <td class="p-4 relative">
+                                        <div class="font-medium text-gray-900">B - 363050</div>
+                                        <div class="text-[11px] text-gray-500 mt-0.5">Yazaki FSM53951</div>
+                                    </td>
+                                    <td class="p-4 font-mono text-gray-600">2878897-3</td>
+                                    <td class="p-4"><span class="bg-green-100/50 text-green-700 px-2 py-1 rounded-md text-[11px] font-medium">Facturado</span></td>
+                                    <td class="p-4">
+                                        <div>31-Oct-25 23:53 (Sale)</div>
+                                        <div class="text-gray-400">01-Nov-25 06:43 (Llega)</div>
+                                    </td>
+                                    <td class="p-4 font-medium">GRUPO YAZAKI</td>
+                                </tr>
+                                <tr class="hover:bg-gray-50/50 transition-colors">
+                                    <td class="p-4">
+                                        <div class="font-medium text-gray-900">B - 363061</div>
+                                        <div class="text-[11px] text-gray-500 mt-0.5">N/A</div>
+                                    </td>
+                                    <td class="p-4 font-mono text-gray-600">2879083-3</td>
+                                    <td class="p-4"><span class="bg-green-100/50 text-green-700 px-2 py-1 rounded-md text-[11px] font-medium">Facturado</span></td>
+                                    <td class="p-4">
+                                        <div>01-Nov-25 00:05 (Sale)</div>
+                                        <div class="text-gray-400">01-Nov-25 08:30 (Llega)</div>
+                                    </td>
+                                    <td class="p-4 font-medium">SAFRAN</td>
+                                </tr>
+                                <tr class="hover:bg-gray-50/50 transition-colors">
+                                    <td class="p-4">
+                                        <div class="font-medium text-gray-900">B - 363049</div>
+                                        <div class="text-[11px] text-gray-500 mt-0.5">APTIV 12345</div>
+                                    </td>
+                                    <td class="p-4 font-mono text-gray-600">2879106-2</td>
+                                    <td class="p-4"><span class="bg-green-100/50 text-green-700 px-2 py-1 rounded-md text-[11px] font-medium">Facturado</span></td>
+                                    <td class="p-4">
+                                        <div>02-Nov-25 12:45 (Sale)</div>
+                                        <div class="text-gray-400">02-Nov-25 16:20 (Llega)</div>
+                                    </td>
+                                    <td class="p-4 font-medium">APTIV SERVICES</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer: Complements & Action -->
+            <div class="p-8 border-t border-gray-100/50 flex flex-col md:flex-row justify-between items-center gap-6 bg-white/40">
+                
+                <div class="flex flex-wrap items-center gap-x-8 gap-y-4 w-full md:w-auto">
+                    <!-- Clean checkboxes -->
+                    <label class="flex items-center gap-3 cursor-pointer group">
+                        <input type="checkbox" class="w-4 h-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900 transition-colors cursor-pointer" />
+                        <span class="text-[13px] font-medium text-gray-700 group-hover:text-gray-900">Viaje Cargado</span>
+                    </label>
+                    <label class="flex items-center gap-3 cursor-pointer group">
+                        <input type="checkbox" class="w-4 h-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900 transition-colors cursor-pointer" />
+                        <span class="text-[13px] font-medium text-gray-700 group-hover:text-gray-900">Bono Sierra ($500)</span>
+                    </label>
+
+                    <div class="w-px h-6 bg-gray-200 hidden md:block"></div>
+
+                    <!-- Clean Steppers -->
+                    <div class="flex items-center gap-3">
+                        <span class="text-[12px] font-medium text-gray-500">Estancias Obregón</span>
+                        <div class="flex items-center bg-white border border-gray-200 rounded-lg p-0.5 shadow-sm">
+                            <button class="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-50 rounded-md transition-colors"><i class="fas fa-minus text-[10px]"></i></button>
+                            <span class="w-6 text-center text-[13px] font-semibold text-gray-900">0</span>
+                            <button class="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-50 rounded-md transition-colors"><i class="fas fa-plus text-[10px]"></i></button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Final Action -->
+                <button class="w-full md:w-auto px-8 py-3 text-[14px] font-semibold text-white bg-gray-900 rounded-xl hover:bg-gray-800 focus:outline-none focus:ring-4 focus:ring-gray-900/20 transition-all shadow-lg flex items-center justify-center gap-2">
+                    Guardar y Aprobar
+                </button>
+
+            </div>
+        </div>
+        
+    </div>
+
+</body>
+</html>
