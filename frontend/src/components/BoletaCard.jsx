@@ -2,7 +2,10 @@ import React, { useState } from 'react'
 import { buildApiUrl } from '../api'
 
 export default function BoletaCard({ trip, onUpdate }) {
-    // Pacifico states (kept for future use if needed)
+    // Universal states (needed even for Boleta format)
+    const [bonoQuimico, setBonoQuimico] = useState(trip.Manual_Bono_Quimico ?? false)
+
+    // Pacifico states
     const [pacLoaded, setPacLoaded] = useState(trip.Manual_Pac_Loaded ?? true)
     const [bonoSierra, setBonoSierra] = useState(trip.Manual_Pac_Bono_Sierra ?? false)
     const [bonoDoble, setBonoDoble] = useState(trip.Manual_Pac_Bono_Doble ?? false)
@@ -100,10 +103,15 @@ export default function BoletaCard({ trip, onUpdate }) {
     }
 
     const handleSave = async () => {
+        // Merge current rowsData back into trip.Rows so backend receives updated values
+        const updatedRows = (trip.Rows || []).map((originalRow, i) => ({
+            ...originalRow,
+            ...rowsData[i]
+        }))
+
         const payload = {
             ...trip,
-            Manual_Refuel_Liters: parseFloat(liters) || 0,
-            Manual_Actual_Price_Per_Liter: parseFloat(priceInput) || 0,
+            Rows: updatedRows,
             Manual_Bono_Quimico: bonoQuimico,
             Manual_Pac_Loaded: pacLoaded,
             Manual_Pac_Bono_Sierra: bonoSierra,
@@ -412,8 +420,20 @@ export default function BoletaCard({ trip, onUpdate }) {
             {/* ── Footer: Bonos / Estancia + Save ── */}
             <div className="p-6 md:px-8 md:py-6 flex flex-col md:flex-row justify-between items-center gap-6 bg-white/40">
                 <div className="flex flex-wrap items-center gap-x-8 gap-y-4 w-full md:w-auto">
-                    {trip.Is_Pacifico && trip.Status === 'NEEDS_INPUT' && (
+
+                    {/* Bono Quimico - Universal, visible on all cards */}
+                    <label className="flex items-center gap-3 cursor-pointer group" title="Agrega $250 al total del viaje">
+                        <div className="relative flex items-center">
+                            <input type="checkbox" checked={bonoQuimico} onChange={e => setBonoQuimico(e.target.checked)} className="peer sr-only" />
+                            <div className="w-10 h-6 bg-gray-200 rounded-full peer peer-focus:ring-2 peer-focus:ring-gray-900 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gray-900"></div>
+                        </div>
+                        <span className="text-[13px] font-medium text-gray-700 group-hover:text-gray-900">Aplica Químico <span className="text-gray-400 font-normal">(+$250)</span></span>
+                    </label>
+
+                    {/* Pacific Options - Only if Is_Pacifico */}
+                    {trip.Is_Pacifico && (
                         <>
+                            <div className="w-px h-6 bg-gray-200 hidden lg:block"></div>
                             <label className="flex items-center gap-3 cursor-pointer group">
                                 <input type="checkbox" checked={pacLoaded} onChange={e => setPacLoaded(e.target.checked)} className="w-4 h-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900 transition-colors cursor-pointer" />
                                 <span className="text-[13px] font-medium text-gray-700 group-hover:text-gray-900">Viaje Cargado</span>
