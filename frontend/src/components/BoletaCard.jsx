@@ -225,13 +225,16 @@ export default function BoletaCard({ trip, onUpdate, dieselPrice }) {
                     <div>
                         <h2 className="text-[19px] font-semibold tracking-tight text-gray-900">{trip.Driver}</h2>
                         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1">
-                            {/* Boleta and Unit badges */}
+                            {/* Boleta, Unit and Yield badges */}
                             <div className="flex gap-1.5">
                                 <span className="inline-flex items-center gap-1.5 bg-slate-800 text-white text-[12px] font-semibold px-3 py-1 rounded-lg tracking-wide">
                                     Boleta {trip.Boleta}
                                 </span>
                                 <span className="inline-flex items-center gap-1.5 bg-blue-600 text-white text-[12px] font-semibold px-3 py-1 rounded-lg tracking-wide">
                                     Unidad {trip.Unit}
+                                </span>
+                                <span className="inline-flex items-center gap-1.5 bg-emerald-600 text-white text-[12px] font-semibold px-3 py-1 rounded-lg tracking-wide">
+                                    Rend. Pago {UNIT_YIELDS[trip.Unit] || DEFAULT_YIELD}
                                 </span>
                             </div>
 
