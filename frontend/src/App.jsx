@@ -147,7 +147,12 @@ function App() {
         )}
       </main>
 
-      {selectedWeek && visibleTrips.length > 0 && <SummaryBar trips={visibleTrips} />}
+      {selectedWeek && visibleTrips.length > 0 && (
+        <SummaryBar
+          trips={trips.filter(t => t.Payroll_Week === selectedWeek)}
+          selectedWeek={selectedWeek}
+        />
+      )}
     </div >
   )
 }

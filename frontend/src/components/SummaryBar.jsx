@@ -1,4 +1,6 @@
-export default function SummaryBar({ trips }) {
+import { exportToExcel } from '../utils/exportExcel'
+
+export default function SummaryBar({ trips, selectedWeek }) {
     // Aggregate
     const totals = trips.reduce((acc, trip) => {
         const incentive = trip.Calculated_Incentive ?? trip.Incentive_Pay ?? 0
@@ -31,7 +33,10 @@ export default function SummaryBar({ trips }) {
                         <span className="text-xs text-slate-400 block uppercase tracking-wider text-right">Neto a Pagar</span>
                         <span className="font-mono text-2xl font-bold text-slate-900">${totals.total.toFixed(2)}</span>
                     </div>
-                    <button className="bg-slate-900 hover:bg-slate-800 text-white px-6 py-2 rounded-lg font-medium transition-colors shadow-lg shadow-slate-900/20">
+                    <button
+                        onClick={() => exportToExcel(trips, selectedWeek)}
+                        className="bg-slate-900 hover:bg-slate-800 text-white px-6 py-2 rounded-lg font-medium transition-colors shadow-lg shadow-slate-900/20"
+                    >
                         Exportar Excel
                     </button>
                 </div>
