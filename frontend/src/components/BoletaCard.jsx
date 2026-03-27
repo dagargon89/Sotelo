@@ -225,10 +225,16 @@ export default function BoletaCard({ trip, onUpdate, dieselPrice }) {
                     <div>
                         <h2 className="text-[19px] font-semibold tracking-tight text-gray-900">{trip.Driver}</h2>
                         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1">
-                            {/* Boleta badge */}
-                            <span className="inline-flex items-center gap-1.5 bg-slate-800 text-white text-[12px] font-semibold px-3 py-1 rounded-lg tracking-wide">
-                                Boleta {trip.Boleta}
-                            </span>
+                            {/* Boleta and Unit badges */}
+                            <div className="flex gap-1.5">
+                                <span className="inline-flex items-center gap-1.5 bg-slate-800 text-white text-[12px] font-semibold px-3 py-1 rounded-lg tracking-wide">
+                                    Boleta {trip.Boleta}
+                                </span>
+                                <span className="inline-flex items-center gap-1.5 bg-blue-600 text-white text-[12px] font-semibold px-3 py-1 rounded-lg tracking-wide">
+                                    Unidad {trip.Unit}
+                                </span>
+                            </div>
+
                             <span className="text-[13px] text-gray-500">{trip.Start_Date || 'Fecha N/A'}</span>
                         </div>
                     </div>
