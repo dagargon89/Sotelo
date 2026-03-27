@@ -16,20 +16,6 @@ export default function BoletaCard({ trip, onUpdate, dieselPrice }) {
     // Accordion state - track which rows are expanded
     const [expandedRows, setExpandedRows] = useState(new Set())
 
-    // Editable row data - initialize with trip.Rows values
-    const [rowsData, setRowsData] = useState(() => {
-        return (trip.Rows || []).map(row => ({
-            Kms: row.Kms || 0,
-            Recarga: row.Recarga || 0,
-            Rendimiento: row.Rendimiento || 0,
-            Peso_Carga: row.Peso_Carga || 0,
-            CVP: row.CVP || '',
-            Pago_Por_Km: row.Pago_Por_Km || 0,
-            Litros_A_Pago: row.Litros_A_Pago || 0,
-            Diesel_A_Favor: row.Diesel_A_Favor || 0
-        }))
-    })
-
     const calculateDependentFields = (rowData) => {
         // Use global dieselPrice instead of hardcoded value
         const currentDieselPrice = parseFloat(dieselPrice) || 14.85
@@ -37,24 +23,47 @@ export default function BoletaCard({ trip, onUpdate, dieselPrice }) {
         const kms = parseFloat(rowData.Kms) || 0
         const recarga = parseFloat(rowData.Recarga) || 0
 
-        // Look up unit-specific rendimiento from constants table, fallback to row value, then DEFAULT
-        const unitYield = UNIT_YIELDS[trip.Unit]
-        const rendimiento = parseFloat(rowData.Rendimiento) || unitYield || DEFAULT_YIELD
+        // Rendimiento Pago (valor de la tabla de la unidad)
+        const unitYield = UNIT_YIELDS[trip.Unit] || DEFAULT_YIELD
+        
+        // Rendimiento Real (el que viene en la fila o se edita manualmente)
+        const rendimientoReal = parseFloat(rowData.Rendimiento) || unitYield
 
-        // Fórmula: Litros Permitidos = KMS / Rendimiento
-        const litrosPermitidos = rendimiento > 0 ? kms / rendimiento : 0
+        // Nueva fórmula solicitada:
+        // Litros Pago = (KMS / Rendimiento Pago) - Recarga
+        // Importante: Usamos unitYield (Rendimiento Pago) según lo solicitado por el usuario
+        const litrosPermitidos = unitYield > 0 ? (kms / unitYield) : 0
+        const litrosAPago = litrosPermitidos - recarga
 
-        // Fórmula: Litros Ahorrados = Litros Permitidos - Recarga Real
-        const litrosAhorrados = litrosPermitidos - recarga
-
-        // Fórmula: Diesel a Favor = Litros Ahorrados × Price
-        const dieselAFavor = litrosAhorrados * currentDieselPrice
+        // Diesel a Favor = Litros Pago × Precio Diesel
+        const dieselAFavor = litrosAPago * currentDieselPrice
 
         return {
-            Litros_A_Pago: parseFloat(litrosPermitidos.toFixed(2)),
+            Litros_A_Pago: parseFloat(litrosAPago.toFixed(2)),
             Diesel_A_Favor: parseFloat(dieselAFavor.toFixed(2))
         }
     }
+
+
+    // Editable row data - initialize with trip.Rows values
+    const [rowsData, setRowsData] = useState(() => {
+        return (trip.Rows || []).map(row => {
+            const baseData = {
+                Kms: row.Kms || 0,
+                Recarga: row.Recarga || 0,
+                Rendimiento: row.Rendimiento || 0,
+                Peso_Carga: row.Peso_Carga || 0,
+                CVP: row.CVP || '',
+                Pago_Por_Km: row.Pago_Por_Km || 0,
+                Litros_A_Pago: row.Litros_A_Pago || 0,
+                Diesel_A_Favor: row.Diesel_A_Favor || 0
+            }
+            // Realizar cálculo inicial para asegurar que mostramos los valores correctos desde el inicio
+            const calculations = calculateDependentFields(baseData)
+            return { ...baseData, ...calculations }
+        })
+    })
+
 
     // React to diesel price changes
     React.useEffect(() => {
@@ -334,7 +343,7 @@ export default function BoletaCard({ trip, onUpdate, dieselPrice }) {
                                                             <tr className="bg-slate-700 text-white">
                                                                 <th className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wider text-right">KMS ✎</th>
                                                                 <th className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wider bg-yellow-400 text-slate-900 text-right">Recarga ✎</th>
-                                                                <th className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wider bg-yellow-400 text-slate-900 text-right">Rendimiento ✎</th>
+                                                                <th className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wider bg-blue-400 text-slate-900 text-right">Rendimiento 🔢</th>
                                                                 <th className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wider bg-yellow-400 text-slate-900 text-right">Peso Carga ✎</th>
                                                                 <th className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wider text-center">Tipo ✎</th>
                                                                 <th className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wider">Remolque</th>
@@ -344,6 +353,7 @@ export default function BoletaCard({ trip, onUpdate, dieselPrice }) {
                                                                 <th className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wider bg-green-400 text-slate-900 text-right">Diesel Favor 🔢</th>
                                                             </tr>
                                                         </thead>
+
                                                         <tbody>
                                                             <tr className="bg-white/80">
                                                                 {/* KMS - Editable */}
@@ -444,7 +454,60 @@ export default function BoletaCard({ trip, onUpdate, dieselPrice }) {
                             })}
                         </tbody>
                     </table>
+
+                    {/* overall boleta summary at bottom of table */}
+                    <div className="bg-slate-50/80 px-8 py-4 border-t border-gray-100 flex flex-wrap justify-end items-center gap-x-12 gap-y-2">
+                        <div className="flex flex-col items-end">
+                            <span className="text-[10px] uppercase font-bold text-gray-400 tracking-widest mb-1">TOTAL KMS BOLETA</span>
+                            <span className="text-sm font-mono font-bold text-gray-700">
+                                {rowsData.reduce((sum, r) => sum + (parseFloat(r.Kms) || 0), 0).toFixed(1)}
+                            </span>
+                        </div>
+                        <div className="flex flex-col items-end">
+                            <span className="text-[10px] uppercase font-bold text-gray-400 tracking-widest mb-1">TOTAL RECARGA</span>
+                            <span className="text-sm font-mono font-bold text-gray-700">
+                                {rowsData.reduce((sum, r) => sum + (parseFloat(r.Recarga) || 0), 0).toFixed(3)}
+                            </span>
+                        </div>
+                        <div className="flex flex-col items-end">
+                            <span className="text-[10px] uppercase font-bold text-blue-500 tracking-widest mb-1">REND. REAL (BOLETA)</span>
+                            <span className="text-sm font-mono font-bold text-gray-700">
+                                {(() => {
+                                    const tKms = rowsData.reduce((sum, r) => sum + (parseFloat(r.Kms) || 0), 0)
+                                    const tRec = rowsData.reduce((sum, r) => sum + (parseFloat(r.Recarga) || 0), 0)
+                                    return tRec > 0 ? (tKms / tRec).toFixed(3) : '—'
+                                })()}
+                            </span>
+                        </div>
+                        <div className="flex flex-col items-end">
+
+                            <span className="text-[10px] uppercase font-bold text-green-600 tracking-widest mb-1 underline decoration-green-300">LITROS PAGO (BOLETA)</span>
+                            <span className="text-lg font-mono font-bold text-slate-900">
+                                {(() => {
+                                    const tKms = rowsData.reduce((sum, r) => sum + (parseFloat(r.Kms) || 0), 0)
+                                    const tRec = rowsData.reduce((sum, r) => sum + (parseFloat(r.Recarga) || 0), 0)
+                                    const rendPago = UNIT_YIELDS[trip.Unit] || DEFAULT_YIELD
+                                    const res = rendPago > 0 ? (tKms / rendPago) - tRec : 0
+                                    return res.toFixed(2)
+                                })()}
+                            </span>
+                        </div>
+                        <div className="flex flex-col items-end">
+                            <span className="text-[10px] uppercase font-bold text-slate-800 tracking-widest mb-1">BOLETA INCENTIVO TOTAL</span>
+                            <span className="text-xl font-mono font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-xl">
+                                {(() => {
+                                    const tKms = rowsData.reduce((sum, r) => sum + (parseFloat(r.Kms) || 0), 0)
+                                    const tRec = rowsData.reduce((sum, r) => sum + (parseFloat(r.Recarga) || 0), 0)
+                                    const rendPago = UNIT_YIELDS[trip.Unit] || DEFAULT_YIELD
+                                    const resLitros = rendPago > 0 ? (tKms / rendPago) - tRec : 0
+                                    const currentDieselPrice = parseFloat(dieselPrice) || 14.85
+                                    return `$${(resLitros * currentDieselPrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                                })()}
+                            </span>
+                        </div>
+                    </div>
                 </div>
+
             )}
 
             {/* ── Footer: Bonos / Estancia + Save ── */}
