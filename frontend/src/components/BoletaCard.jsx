@@ -72,6 +72,35 @@ export default function BoletaCard({ trip, onUpdate, dieselPrice }) {
     }, [])
 
 
+    // Recalculate live totals and notify parent (runs on diesel price OR bonus changes)
+    const recalcAndNotify = (currentRowsData) => {
+        const tKms = currentRowsData.reduce((sum, r) => sum + (parseFloat(r.Kms) || 0), 0)
+        const tRec = currentRowsData.reduce((sum, r) => sum + (parseFloat(r.Recarga) || 0), 0)
+        const rendPago = UNIT_YIELDS[trip.Unit] || DEFAULT_YIELD
+        const currentDieselPrice = parseFloat(dieselPrice) || 14.85
+        const dieselIncentive = rendPago > 0 ? ((tKms / rendPago) - tRec) * currentDieselPrice : 0
+
+        const quimico = bonoQuimico ? 250 : 0
+        let bonos = 0
+        if (trip.Is_Pacifico) {
+            if (bonoSierra) bonos += 500
+            if (bonoDoble)  bonos += 1726
+            bonos += (parseInt(estObregon) || 0) * 600
+            bonos += (parseInt(estMochis)  || 0) * 300
+        }
+
+        const incentivePay = dieselIncentive + quimico + bonos
+        const basePay = parseFloat(trip.Base_Pay) || 0
+        const updatedRows = (trip.Rows || []).map((or, i) => ({ ...or, ...currentRowsData[i] }))
+
+        onUpdate({
+            ...trip,
+            Rows: updatedRows,
+            Incentive_Pay: parseFloat(incentivePay.toFixed(2)),
+            Total_Pay: parseFloat((basePay + incentivePay).toFixed(2)),
+        })
+    }
+
     // React to diesel price changes
     React.useEffect(() => {
         const newRowsData = rowsData.map(row => ({
@@ -79,14 +108,13 @@ export default function BoletaCard({ trip, onUpdate, dieselPrice }) {
             ...calculateDependentFields(row, rowsData)
         }))
         setRowsData(newRowsData)
-
-        // Notify parent of all updated rows at once
-        const updatedRows = (trip.Rows || []).map((or, i) => ({
-            ...or,
-            ...newRowsData[i]
-        }))
-        onUpdate({ ...trip, Rows: updatedRows })
+        recalcAndNotify(newRowsData)
     }, [dieselPrice])
+
+    // React to bonus changes
+    React.useEffect(() => {
+        recalcAndNotify(rowsData)
+    }, [bonoQuimico, bonoSierra, bonoDoble, estObregon, estMochis])
 
     const toggleRow = (index) => {
         const newExpanded = new Set(expandedRows)
@@ -113,17 +141,7 @@ export default function BoletaCard({ trip, onUpdate, dieselPrice }) {
         }))
 
         setRowsData(updatedRows)
-
-        // Notify parent component of the update for all rows
-        const updatedTripRows = (trip.Rows || []).map((originalRow, i) => ({
-            ...originalRow,
-            ...updatedRows[i]
-        }))
-
-        onUpdate({
-            ...trip,
-            Rows: updatedTripRows
-        })
+        recalcAndNotify(updatedRows)
     }
 
     const toggleStatus = () => {
