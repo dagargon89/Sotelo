@@ -12,19 +12,30 @@ function App() {
   const [selectedWeek, setSelectedWeek] = useState(null)
   const [activeTab, setActiveTab] = useState('NEEDS_INPUT') // 'NEEDS_INPUT' | 'PENDING' | 'APPROVED'
   const [dieselPrice, setDieselPrice] = useState(24.50)
+  const [driverFilter, setDriverFilter] = useState('')
 
   // Derive available weeks from trips
   const availableWeeks = [...new Set(trips.map(t => t.Payroll_Week || 0))].filter(w => w > 0)
 
+  // Derive unique driver names for the current week
+  const availableDrivers = [...new Set(
+    trips.filter(t => t.Payroll_Week === selectedWeek).map(t => t.Driver).filter(Boolean)
+  )].sort()
+
   // Filter trips based on selection
   const visibleTrips = selectedWeek
-    ? (selectedWeek === 'ALL' ? trips : trips.filter(t => t.Payroll_Week === selectedWeek && t.Status === activeTab))
+    ? (selectedWeek === 'ALL' ? trips : trips.filter(t => {
+        const matchWeek = t.Payroll_Week === selectedWeek && t.Status === activeTab
+        const matchDriver = !driverFilter || (t.Driver || '').toLowerCase().includes(driverFilter.toLowerCase())
+        return matchWeek && matchDriver
+      }))
     : []
 
   const handleFileUpload = async (file) => {
     setLoading(true)
     setSelectedWeek(null) // Reset selection on new upload
     setActiveTab('NEEDS_INPUT')
+    setDriverFilter('')
     const formData = new FormData()
     formData.append('file', file)
 
@@ -89,26 +100,46 @@ function App() {
               onDieselPriceChange={setDieselPrice}
             />
 
-            {/* Status Tabs */}
-            <div className="flex space-x-1 mb-6 bg-slate-200 p-1 rounded-lg w-fit">
-              <button
-                onClick={() => setActiveTab('NEEDS_INPUT')}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${activeTab === 'NEEDS_INPUT' ? 'bg-white text-red-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-              >
-                Requiere Captura ({trips.filter(t => t.Payroll_Week === selectedWeek && t.Status === 'NEEDS_INPUT').length})
-              </button>
-              <button
-                onClick={() => setActiveTab('PENDING')}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${activeTab === 'PENDING' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-              >
-                Pendiente ({trips.filter(t => t.Payroll_Week === selectedWeek && t.Status === 'PENDING').length})
-              </button>
-              <button
-                onClick={() => setActiveTab('APPROVED')}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${activeTab === 'APPROVED' ? 'bg-white text-green-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
-              >
-                Aprobado ({trips.filter(t => t.Payroll_Week === selectedWeek && t.Status === 'APPROVED').length})
-              </button>
+            {/* Status Tabs + Filtro conductor */}
+            <div className="flex items-center gap-3 mb-6 flex-wrap">
+              <div className="flex space-x-1 bg-slate-200 p-1 rounded-lg">
+                <button
+                  onClick={() => { setActiveTab('NEEDS_INPUT'); setDriverFilter('') }}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${activeTab === 'NEEDS_INPUT' ? 'bg-white text-red-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                >
+                  Requiere Captura ({trips.filter(t => t.Payroll_Week === selectedWeek && t.Status === 'NEEDS_INPUT').length})
+                </button>
+                <button
+                  onClick={() => { setActiveTab('PENDING'); setDriverFilter('') }}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${activeTab === 'PENDING' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                >
+                  Pendiente ({trips.filter(t => t.Payroll_Week === selectedWeek && t.Status === 'PENDING').length})
+                </button>
+                <button
+                  onClick={() => { setActiveTab('APPROVED'); setDriverFilter('') }}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${activeTab === 'APPROVED' ? 'bg-white text-green-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+                >
+                  Aprobado ({trips.filter(t => t.Payroll_Week === selectedWeek && t.Status === 'APPROVED').length})
+                </button>
+              </div>
+
+              <div className="relative">
+                <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none">🔍</span>
+                <input
+                  type="text"
+                  list="drivers-list"
+                  value={driverFilter}
+                  onChange={e => setDriverFilter(e.target.value)}
+                  placeholder="Conductor..."
+                  className="pl-7 pr-6 py-2 text-sm border border-gray-300 rounded-lg w-44 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
+                <datalist id="drivers-list">
+                  {availableDrivers.map(d => <option key={d} value={d} />)}
+                </datalist>
+                {driverFilter && (
+                  <button onClick={() => setDriverFilter('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-sm leading-none">×</button>
+                )}
+              </div>
             </div>
 
             <TripList trips={visibleTrips} onUpdate={handleRecalculate} dieselPrice={dieselPrice} />
