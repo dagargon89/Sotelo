@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { buildApiUrl } from '../api'
+import { UNIT_YIELDS, DEFAULT_YIELD } from '../constants'
 
 export default function BoletaCard({ trip, onUpdate, dieselPrice }) {
     // Universal states (needed even for Boleta format)
@@ -34,8 +35,11 @@ export default function BoletaCard({ trip, onUpdate, dieselPrice }) {
         const currentDieselPrice = parseFloat(dieselPrice) || 14.85
 
         const kms = parseFloat(rowData.Kms) || 0
-        const rendimiento = parseFloat(rowData.Rendimiento) || 2.37341  // Default yield
         const recarga = parseFloat(rowData.Recarga) || 0
+
+        // Look up unit-specific rendimiento from constants table, fallback to row value, then DEFAULT
+        const unitYield = UNIT_YIELDS[trip.Unit]
+        const rendimiento = parseFloat(rowData.Rendimiento) || unitYield || DEFAULT_YIELD
 
         // Fórmula: Litros Permitidos = KMS / Rendimiento
         const litrosPermitidos = rendimiento > 0 ? kms / rendimiento : 0
