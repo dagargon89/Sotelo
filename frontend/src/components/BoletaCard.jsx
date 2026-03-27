@@ -496,7 +496,20 @@ export default function BoletaCard({ trip, onUpdate, dieselPrice }) {
                                     const rendPago = UNIT_YIELDS[trip.Unit] || DEFAULT_YIELD
                                     const resLitros = rendPago > 0 ? (tKms / rendPago) - tRec : 0
                                     const currentDieselPrice = parseFloat(dieselPrice) || 14.85
-                                    return `$${(resLitros * currentDieselPrice).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                                    const dieselIncentive = resLitros * currentDieselPrice
+
+                                    // Bonos
+                                    const quimico = bonoQuimico ? 250 : 0
+                                    let bonos = 0
+                                    if (trip.Is_Pacifico) {
+                                        if (bonoSierra) bonos += 500
+                                        if (bonoDoble)  bonos += 1726
+                                        bonos += (parseInt(estObregon) || 0) * 600
+                                        bonos += (parseInt(estMochis)  || 0) * 300
+                                    }
+
+                                    const total = dieselIncentive + quimico + bonos
+                                    return `$${total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                                 })()}
                             </span>
                         </div>
