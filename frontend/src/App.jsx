@@ -11,6 +11,7 @@ function App() {
   const [loading, setLoading] = useState(false)
   const [selectedWeek, setSelectedWeek] = useState(null)
   const [activeTab, setActiveTab] = useState('NEEDS_INPUT') // 'NEEDS_INPUT' | 'PENDING' | 'APPROVED'
+  const [dieselPrice, setDieselPrice] = useState(24.50)
 
   // Derive available weeks from trips
   const availableWeeks = [...new Set(trips.map(t => t.Payroll_Week || 0))].filter(w => w > 0)
@@ -82,7 +83,11 @@ function App() {
           <PeriodSelector weeks={availableWeeks} onSelect={setSelectedWeek} />
         ) : (
           <>
-            <DashboardKPIs trips={trips.filter(t => t.Payroll_Week === selectedWeek)} />
+            <DashboardKPIs
+              trips={trips.filter(t => t.Payroll_Week === selectedWeek)}
+              dieselPrice={dieselPrice}
+              onDieselPriceChange={setDieselPrice}
+            />
 
             {/* Status Tabs */}
             <div className="flex space-x-1 mb-6 bg-slate-200 p-1 rounded-lg w-fit">
@@ -106,7 +111,7 @@ function App() {
               </button>
             </div>
 
-            <TripList trips={visibleTrips} onUpdate={handleRecalculate} />
+            <TripList trips={visibleTrips} onUpdate={handleRecalculate} dieselPrice={dieselPrice} />
           </>
         )}
       </main>

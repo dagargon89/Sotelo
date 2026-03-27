@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { buildApiUrl } from '../api'
 
-export default function BoletaCard({ trip, onUpdate }) {
+export default function BoletaCard({ trip, onUpdate, dieselPrice }) {
     // Universal states (needed even for Boleta format)
     const [bonoQuimico, setBonoQuimico] = useState(trip.Manual_Bono_Quimico ?? false)
 
@@ -28,6 +28,45 @@ export default function BoletaCard({ trip, onUpdate }) {
             Diesel_A_Favor: row.Diesel_A_Favor || 0
         }))
     })
+
+    const calculateDependentFields = (rowData) => {
+        // Use global dieselPrice instead of hardcoded value
+        const currentDieselPrice = parseFloat(dieselPrice) || 14.85
+
+        const kms = parseFloat(rowData.Kms) || 0
+        const rendimiento = parseFloat(rowData.Rendimiento) || 2.37341  // Default yield
+        const recarga = parseFloat(rowData.Recarga) || 0
+
+        // Fórmula: Litros Permitidos = KMS / Rendimiento
+        const litrosPermitidos = rendimiento > 0 ? kms / rendimiento : 0
+
+        // Fórmula: Litros Ahorrados = Litros Permitidos - Recarga Real
+        const litrosAhorrados = litrosPermitidos - recarga
+
+        // Fórmula: Diesel a Favor = Litros Ahorrados × Price
+        const dieselAFavor = litrosAhorrados * currentDieselPrice
+
+        return {
+            Litros_A_Pago: parseFloat(litrosPermitidos.toFixed(2)),
+            Diesel_A_Favor: parseFloat(dieselAFavor.toFixed(2))
+        }
+    }
+
+    // React to diesel price changes
+    React.useEffect(() => {
+        const newRowsData = rowsData.map(row => ({
+            ...row,
+            ...calculateDependentFields(row)
+        }))
+        setRowsData(newRowsData)
+        
+        // Notify parent of all updated rows at once
+        const updatedRows = (trip.Rows || []).map((or, i) => ({
+            ...or,
+            ...newRowsData[i]
+        }))
+        onUpdate({ ...trip, Rows: updatedRows })
+    }, [dieselPrice])
 
     const toggleRow = (index) => {
         const newExpanded = new Set(expandedRows)
@@ -59,28 +98,6 @@ export default function BoletaCard({ trip, onUpdate }) {
         recalculateRow(rowIndex, newRowsData[rowIndex])
     }
 
-    const calculateDependentFields = (rowData) => {
-        // Constants
-        const DIESEL_PRICE = 14.85  // Precio por litro según documento
-
-        const kms = parseFloat(rowData.Kms) || 0
-        const rendimiento = parseFloat(rowData.Rendimiento) || 2.37341  // Default yield
-        const recarga = parseFloat(rowData.Recarga) || 0
-
-        // Fórmula: Litros Permitidos = KMS / Rendimiento
-        const litrosPermitidos = rendimiento > 0 ? kms / rendimiento : 0
-
-        // Fórmula: Litros Ahorrados = Litros Permitidos - Recarga Real
-        const litrosAhorrados = litrosPermitidos - recarga
-
-        // Fórmula: Diesel a Favor = Litros Ahorrados × $14.85
-        const dieselAFavor = litrosAhorrados * DIESEL_PRICE
-
-        return {
-            Litros_A_Pago: parseFloat(litrosPermitidos.toFixed(2)),
-            Diesel_A_Favor: parseFloat(dieselAFavor.toFixed(2))
-        }
-    }
 
     const recalculateRow = (rowIndex, rowData) => {
         // Update the trip's Rows with new calculated values

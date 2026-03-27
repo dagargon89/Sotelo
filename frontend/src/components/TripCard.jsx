@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { buildApiUrl } from '../api'
 
-export default function TripCard({ trip, onUpdate }) {
+export default function TripCard({ trip, onUpdate, dieselPrice }) {
     const [liters, setLiters] = useState(trip.Manual_Refuel_Liters || '')
     const [priceInput, setPriceInput] = useState(trip.Manual_Actual_Price_Per_Liter || '')
     const [bonoQuimico, setBonoQuimico] = useState(trip.Manual_Bono_Quimico ?? false)
@@ -19,7 +19,8 @@ export default function TripCard({ trip, onUpdate }) {
         const actual = parseFloat(inLiters) || 0
         const savings = allowed - actual
         
-        const price = parseFloat(inPrice) > 0 ? parseFloat(inPrice) : trip.Diesel_Rate
+        // Use manual price if set, otherwise global dieselPrice, otherwise trip's original Diesel_Rate
+        const price = parseFloat(inPrice) > 0 ? parseFloat(inPrice) : (parseFloat(dieselPrice) || trip.Diesel_Rate)
         const incentive = savings * price
         
         let extras = 0
@@ -31,6 +32,20 @@ export default function TripCard({ trip, onUpdate }) {
 
     const { incentive, total } = calc(liters, priceInput, bonoQuimico)
     const isPositive = incentive >= 0
+
+    // React to diesel price changes
+    useEffect(() => {
+        // Only update if no manual price is set for this trip
+        if (!priceInput) {
+            const results = calc(liters, priceInput, bonoQuimico)
+            onUpdate({
+                ...trip,
+                Incentive_Pay: results.incentive,
+                Total_Pay: results.total,
+                Diesel_Savings: results.savings
+            })
+        }
+    }, [dieselPrice])
 
     const handleInputs = (newLiters, newPrice, newQuimico) => {
         setLiters(newLiters)
