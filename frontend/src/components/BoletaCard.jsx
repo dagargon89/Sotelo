@@ -16,35 +16,6 @@ export default function BoletaCard({ trip, onUpdate, dieselPrice }) {
     // Accordion state - track which rows are expanded
     const [expandedRows, setExpandedRows] = useState(new Set())
 
-    const calculateDependentFields = (rowData) => {
-        // Use global dieselPrice instead of hardcoded value
-        const currentDieselPrice = parseFloat(dieselPrice) || 14.85
-
-        const kms = parseFloat(rowData.Kms) || 0
-        const recarga = parseFloat(rowData.Recarga) || 0
-
-        // Rendimiento Pago (valor de la tabla de la unidad)
-        const unitYield = UNIT_YIELDS[trip.Unit] || DEFAULT_YIELD
-        
-        // Rendimiento Real (el que viene en la fila o se edita manualmente)
-        const rendimientoReal = parseFloat(rowData.Rendimiento) || unitYield
-
-        // Nueva fórmula solicitada:
-        // Litros Pago = (KMS / Rendimiento Pago) - Recarga
-        // Importante: Usamos unitYield (Rendimiento Pago) según lo solicitado por el usuario
-        const litrosPermitidos = unitYield > 0 ? (kms / unitYield) : 0
-        const litrosAPago = litrosPermitidos - recarga
-
-        // Diesel a Favor = Litros Pago × Precio Diesel
-        const dieselAFavor = litrosAPago * currentDieselPrice
-
-        return {
-            Litros_A_Pago: parseFloat(litrosAPago.toFixed(2)),
-            Diesel_A_Favor: parseFloat(dieselAFavor.toFixed(2))
-        }
-    }
-
-
     // Editable row data - initialize with trip.Rows values
     const [rowsData, setRowsData] = useState(() => {
         return (trip.Rows || []).map(row => {
@@ -58,21 +29,60 @@ export default function BoletaCard({ trip, onUpdate, dieselPrice }) {
                 Litros_A_Pago: row.Litros_A_Pago || 0,
                 Diesel_A_Favor: row.Diesel_A_Favor || 0
             }
-            // Realizar cálculo inicial para asegurar que mostramos los valores correctos desde el inicio
-            const calculations = calculateDependentFields(baseData)
-            return { ...baseData, ...calculations }
+            return baseData
         })
     })
+
+    const calculateDependentFields = (rowData, allRows) => {
+        // Use global dieselPrice instead of hardcoded value
+        const currentDieselPrice = parseFloat(dieselPrice) || 14.85
+
+        const kms = parseFloat(rowData.Kms) || 0
+        const recarga = parseFloat(rowData.Recarga) || 0
+
+        // Rendimiento Pago (valor de la tabla de la unidad)
+        const unitYield = UNIT_YIELDS[trip.Unit] || DEFAULT_YIELD
+
+        // Calcular suma total de KMS de todas las filas
+        const totalKms = (allRows || rowsData).reduce((sum, r) => sum + (parseFloat(r.Kms) || 0), 0)
+
+        // Rendimiento Real: se calcula como Suma Total KMS / Recarga de esta fila
+        const rendimientoReal = recarga > 0 ? (totalKms / recarga) : 0
+
+        // Nueva fórmula solicitada:
+        // Litros Pago = (KMS / Rendimiento Pago) - Recarga
+        // Importante: Usamos unitYield (Rendimiento Pago) según lo solicitado por el usuario
+        const litrosPermitidos = unitYield > 0 ? (kms / unitYield) : 0
+        const litrosAPago = litrosPermitidos - recarga
+
+        // Diesel a Favor = Litros Pago × Precio Diesel
+        const dieselAFavor = litrosAPago * currentDieselPrice
+
+        return {
+            Rendimiento: parseFloat(rendimientoReal.toFixed(2)),
+            Litros_A_Pago: parseFloat(litrosAPago.toFixed(2)),
+            Diesel_A_Favor: parseFloat(dieselAFavor.toFixed(2))
+        }
+    }
+
+    // Realizar cálculos iniciales después de definir rowsData
+    React.useEffect(() => {
+        const initialCalculations = rowsData.map(row => ({
+            ...row,
+            ...calculateDependentFields(row, rowsData)
+        }))
+        setRowsData(initialCalculations)
+    }, [])
 
 
     // React to diesel price changes
     React.useEffect(() => {
         const newRowsData = rowsData.map(row => ({
             ...row,
-            ...calculateDependentFields(row)
+            ...calculateDependentFields(row, rowsData)
         }))
         setRowsData(newRowsData)
-        
+
         // Notify parent of all updated rows at once
         const updatedRows = (trip.Rows || []).map((or, i) => ({
             ...or,
@@ -98,32 +108,24 @@ export default function BoletaCard({ trip, onUpdate, dieselPrice }) {
             [field]: value
         }
 
-        // Auto-calculate dependent fields
-        const calculatedData = calculateDependentFields(newRowsData[rowIndex])
-        newRowsData[rowIndex] = {
-            ...newRowsData[rowIndex],
-            ...calculatedData
-        }
+        // Recalcular todos los campos dependientes para TODAS las filas
+        // porque el rendimiento depende de la suma total de KMS
+        const updatedRows = newRowsData.map(row => ({
+            ...row,
+            ...calculateDependentFields(row, newRowsData)
+        }))
 
-        setRowsData(newRowsData)
+        setRowsData(updatedRows)
 
-        // Recalculate based on changed values
-        recalculateRow(rowIndex, newRowsData[rowIndex])
-    }
+        // Notify parent component of the update for all rows
+        const updatedTripRows = (trip.Rows || []).map((originalRow, i) => ({
+            ...originalRow,
+            ...updatedRows[i]
+        }))
 
-
-    const recalculateRow = (rowIndex, rowData) => {
-        // Update the trip's Rows with new calculated values
-        const updatedRows = [...(trip.Rows || [])]
-        updatedRows[rowIndex] = {
-            ...updatedRows[rowIndex],
-            ...rowData
-        }
-
-        // Notify parent component of the update
         onUpdate({
             ...trip,
-            Rows: updatedRows
+            Rows: updatedTripRows
         })
     }
 
@@ -375,15 +377,11 @@ export default function BoletaCard({ trip, onUpdate, dieselPrice }) {
                                                                         className="w-full px-2 py-1 text-[13px] text-right font-mono border border-yellow-300 rounded focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
                                                                     />
                                                                 </td>
-                                                                {/* Rendimiento - Editable */}
-                                                                <td className="px-4 py-2 bg-yellow-50/60">
-                                                                    <input
-                                                                        type="number"
-                                                                        step="0.01"
-                                                                        value={rowsData[i]?.Rendimiento || ''}
-                                                                        onChange={(e) => handleRowFieldChange(i, 'Rendimiento', parseFloat(e.target.value) || 0)}
-                                                                        className="w-full px-2 py-1 text-[13px] text-right font-mono border border-yellow-300 rounded focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
-                                                                    />
+                                                                {/* Rendimiento - Calculado automáticamente (KMS / Recarga) */}
+                                                                <td className="px-4 py-3 bg-blue-50/60">
+                                                                    <div className="text-[13px] text-right font-mono font-semibold text-gray-900">
+                                                                        {rowsData[i]?.Rendimiento?.toFixed(2) || '0.00'}
+                                                                    </div>
                                                                 </td>
                                                                 {/* Peso de Carga - Editable */}
                                                                 <td className="px-4 py-2 bg-yellow-50/60">
