@@ -43,17 +43,14 @@ export default function BoletaCard({ trip, onUpdate, dieselPrice }) {
         // Rendimiento Pago (valor de la tabla de la unidad)
         const unitYield = UNIT_YIELDS[trip.Unit] || DEFAULT_YIELD
 
-        // Calcular suma total de KMS de todas las filas
+        // Calcular suma total de KMS de todas las filas (coordenadas)
         const totalKms = (allRows || rowsData).reduce((sum, r) => sum + (parseFloat(r.Kms) || 0), 0)
 
         // Rendimiento Real: se calcula como Suma Total KMS / Recarga de esta fila
         const rendimientoReal = recarga > 0 ? (totalKms / recarga) : 0
 
-        // Nueva fórmula solicitada:
-        // Litros Pago = (KMS / Rendimiento Pago) - Recarga
-        // Importante: Usamos unitYield (Rendimiento Pago) según lo solicitado por el usuario
-        const litrosPermitidos = unitYield > 0 ? (kms / unitYield) : 0
-        const litrosAPago = litrosPermitidos - recarga
+        // Litros Pago = (Sum(KMs coordenadas) / Rendimiento Pago) - Recarga
+        const litrosAPago = unitYield > 0 ? (totalKms / unitYield) - recarga : 0
 
         // Diesel a Favor = Litros Pago × Precio Diesel
         const dieselAFavor = litrosAPago * currentDieselPrice
