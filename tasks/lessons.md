@@ -20,3 +20,7 @@ Este documento registra patrones críticos detectados durante el desarrollo para
 ## Patrones de Desarrollo
 - [ ] Implementar validación estricta de extensiones de archivo en el cliente y servidor.
 - [ ] Mantener los componentes de UI (`TripCard.jsx`) desacoplados de la lógica de cálculo (delegar al API PHP).
+
+### Migracion a CodeIgniter 4
+- En la transición a CI4 mantener compatibilidad de contratos (`/api/upload`, `/api/calculate`) para no romper React mientras se migra la lógica interna por etapas.
+- Las credenciales de MySQL deben ir solo en `backend/.env` y nunca en código fuente versionado.
