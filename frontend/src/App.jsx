@@ -4,9 +4,12 @@ import TripList from './components/TripList'
 import SummaryBar from './components/SummaryBar'
 import PeriodSelector from './components/PeriodSelector'
 import DashboardKPIs from './components/DashboardKPIs'
+import AdminSection from './components/AdminSection'
 import { buildApiUrl, fetchRendimientos, loadPendingSession, restorePendingSession, savePendingSession } from './api'
 
 function App() {
+  const isAdminView = window.location.pathname.startsWith('/admin')
+
   const [trips, setTrips] = useState([])
   const [loading, setLoading] = useState(false)
   const [catalogLoading, setCatalogLoading] = useState(true)
@@ -110,12 +113,17 @@ function App() {
     setTrips(newTrips)
   }
 
+  if (isAdminView) {
+    return <AdminSection />
+  }
+
   return (
     <div className="min-h-screen text-gray-900 font-sans antialiased">
       <header className="bg-slate-900 text-white p-4 shadow-lg sticky top-0 z-50">
         <div className="max-w-7xl mx-auto flex justify-between items-center">
           <h1 className="text-xl font-bold tracking-tight">Dataholics <span className="text-blue-400">Nómina</span></h1>
           <div className="text-xs text-slate-400">
+            <a href="/admin" className="mr-3 text-blue-300 hover:text-blue-100 underline">Administracion</a>
             v1.1 (Control Financiero)
             {selectedWeek && <span className="ml-2 bg-blue-900 px-2 py-1 rounded text-blue-200">Semana {selectedWeek}</span>}
             {selectedWeek && (
