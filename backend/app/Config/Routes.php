@@ -7,6 +7,10 @@ use CodeIgniter\Router\RouteCollection;
  */
 $routes->get('/', 'Home::index');
 
+$routes->options('api/(:any)', static function () {
+	return service('response')->setStatusCode(204);
+});
+
 $routes->group('api', static function (RouteCollection $routes): void {
 	$routes->post('upload', 'UploadController::process');
 	$routes->post('calculate', 'CalculateController::recalculate');

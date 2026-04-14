@@ -1,8 +1,7 @@
 import React, { useState } from 'react'
 import { buildApiUrl } from '../api'
-import { UNIT_YIELDS, DEFAULT_YIELD } from '../constants'
 
-export default function BoletaCard({ trip, onUpdate, dieselPrice }) {
+export default function BoletaCard({ trip, onUpdate, dieselPrice, unitYields = {}, defaultYield = 2.37341 }) {
     // Universal states (needed even for Boleta format)
     const [bonoQuimico, setBonoQuimico] = useState(trip.Manual_Bono_Quimico ?? false)
 
@@ -37,11 +36,10 @@ export default function BoletaCard({ trip, onUpdate, dieselPrice }) {
         // Use global dieselPrice instead of hardcoded value
         const currentDieselPrice = parseFloat(dieselPrice) || 14.85
 
-        const kms = parseFloat(rowData.Kms) || 0
         const recarga = parseFloat(rowData.Recarga) || 0
 
         // Rendimiento Pago (valor de la tabla de la unidad)
-        const unitYield = UNIT_YIELDS[trip.Unit] || DEFAULT_YIELD
+        const unitYield = unitYields[trip.Unit] || defaultYield
 
         // Calcular suma total de KMS de todas las filas (coordenadas)
         const totalKms = (allRows || rowsData).reduce((sum, r) => sum + (parseFloat(r.Kms) || 0), 0)
@@ -76,7 +74,7 @@ export default function BoletaCard({ trip, onUpdate, dieselPrice }) {
     const recalcAndNotify = (currentRowsData) => {
         const tKms = currentRowsData.reduce((sum, r) => sum + (parseFloat(r.Kms) || 0), 0)
         const tRec = currentRowsData.reduce((sum, r) => sum + (parseFloat(r.Recarga) || 0), 0)
-        const rendPago = UNIT_YIELDS[trip.Unit] || DEFAULT_YIELD
+        const rendPago = unitYields[trip.Unit] || defaultYield
         const currentDieselPrice = parseFloat(dieselPrice) || 14.85
         const dieselIncentive = rendPago > 0 ? ((tKms / rendPago) - tRec) * currentDieselPrice : 0
 
@@ -84,9 +82,9 @@ export default function BoletaCard({ trip, onUpdate, dieselPrice }) {
         let bonos = 0
         if (trip.Is_Pacifico) {
             if (bonoSierra) bonos += 500
-            if (bonoDoble)  bonos += 1726
+            if (bonoDoble) bonos += 1726
             bonos += (parseInt(estObregon) || 0) * 600
-            bonos += (parseInt(estMochis)  || 0) * 300
+            bonos += (parseInt(estMochis) || 0) * 300
         }
 
         const incentivePay = dieselIncentive + quimico + bonos
@@ -189,23 +187,23 @@ export default function BoletaCard({ trip, onUpdate, dieselPrice }) {
     const getFactura = (row) => {
         // Try different possible field names
         return row.Factura ||
-               row.factura ||
-               row.Invoice ||
-               row.invoice ||
-               row.Folio_Liquidacion ||
-               row.folio_liquidacion ||
-               row.bill ||
-               row.Bill ||
-               ''
+            row.factura ||
+            row.Invoice ||
+            row.invoice ||
+            row.Folio_Liquidacion ||
+            row.folio_liquidacion ||
+            row.bill ||
+            row.Bill ||
+            ''
     }
 
     // Helper function to get coordenada
     const getCoordenada = (row) => {
         return row.Coordenada ||
-               row.coordenada ||
-               row.Coordinate ||
-               row.coordinate ||
-               ''
+            row.coordenada ||
+            row.Coordinate ||
+            row.coordinate ||
+            ''
     }
 
     // Debug: Log rows data to check what we're receiving
@@ -260,7 +258,7 @@ export default function BoletaCard({ trip, onUpdate, dieselPrice }) {
                                     Unidad {trip.Unit}
                                 </span>
                                 <span className="inline-flex items-center gap-1.5 bg-emerald-600 text-white text-[12px] font-semibold px-3 py-1 rounded-lg tracking-wide">
-                                    Rend. Pago {UNIT_YIELDS[trip.Unit] || DEFAULT_YIELD}
+                                    Rend. Pago {unitYields[trip.Unit] || defaultYield}
                                 </span>
                             </div>
 
@@ -412,11 +410,10 @@ export default function BoletaCard({ trip, onUpdate, dieselPrice }) {
                                                                     <select
                                                                         value={rowsData[i]?.CVP || ''}
                                                                         onChange={(e) => handleRowFieldChange(i, 'CVP', e.target.value)}
-                                                                        className={`px-2 py-1 text-[11px] font-bold rounded border-2 focus:ring-2 focus:ring-blue-500 ${
-                                                                            rowsData[i]?.CVP === 'C' ? 'bg-green-100 text-green-700 border-green-300' :
-                                                                            rowsData[i]?.CVP === 'PT' ? 'bg-blue-100 text-blue-700 border-blue-300' :
-                                                                            'bg-gray-100 text-gray-600 border-gray-300'
-                                                                        }`}
+                                                                        className={`px-2 py-1 text-[11px] font-bold rounded border-2 focus:ring-2 focus:ring-blue-500 ${rowsData[i]?.CVP === 'C' ? 'bg-green-100 text-green-700 border-green-300' :
+                                                                                rowsData[i]?.CVP === 'PT' ? 'bg-blue-100 text-blue-700 border-blue-300' :
+                                                                                    'bg-gray-100 text-gray-600 border-gray-300'
+                                                                            }`}
                                                                     >
                                                                         <option value="">—</option>
                                                                         <option value="C">C</option>
@@ -448,11 +445,10 @@ export default function BoletaCard({ trip, onUpdate, dieselPrice }) {
                                                                 </td>
                                                                 {/* Diesel a Favor - Calculado automáticamente */}
                                                                 <td className="px-4 py-3 bg-green-50/60">
-                                                                    <div className={`text-[13px] text-right font-mono font-bold ${
-                                                                        (rowsData[i]?.Diesel_A_Favor || 0) > 0
+                                                                    <div className={`text-[13px] text-right font-mono font-bold ${(rowsData[i]?.Diesel_A_Favor || 0) > 0
                                                                             ? 'text-green-700'
                                                                             : 'text-red-600'
-                                                                    }`}>
+                                                                        }`}>
                                                                         ${rowsData[i]?.Diesel_A_Favor?.toFixed(2) || '0.00'}
                                                                     </div>
                                                                 </td>
@@ -499,7 +495,7 @@ export default function BoletaCard({ trip, onUpdate, dieselPrice }) {
                                 {(() => {
                                     const tKms = rowsData.reduce((sum, r) => sum + (parseFloat(r.Kms) || 0), 0)
                                     const tRec = rowsData.reduce((sum, r) => sum + (parseFloat(r.Recarga) || 0), 0)
-                                    const rendPago = UNIT_YIELDS[trip.Unit] || DEFAULT_YIELD
+                                    const rendPago = unitYields[trip.Unit] || defaultYield
                                     const res = rendPago > 0 ? (tKms / rendPago) - tRec : 0
                                     return res.toFixed(2)
                                 })()}
@@ -511,7 +507,7 @@ export default function BoletaCard({ trip, onUpdate, dieselPrice }) {
                                 {(() => {
                                     const tKms = rowsData.reduce((sum, r) => sum + (parseFloat(r.Kms) || 0), 0)
                                     const tRec = rowsData.reduce((sum, r) => sum + (parseFloat(r.Recarga) || 0), 0)
-                                    const rendPago = UNIT_YIELDS[trip.Unit] || DEFAULT_YIELD
+                                    const rendPago = unitYields[trip.Unit] || defaultYield
                                     const resLitros = rendPago > 0 ? (tKms / rendPago) - tRec : 0
                                     const currentDieselPrice = parseFloat(dieselPrice) || 14.85
                                     const dieselIncentive = resLitros * currentDieselPrice
@@ -521,9 +517,9 @@ export default function BoletaCard({ trip, onUpdate, dieselPrice }) {
                                     let bonos = 0
                                     if (trip.Is_Pacifico) {
                                         if (bonoSierra) bonos += 500
-                                        if (bonoDoble)  bonos += 1726
+                                        if (bonoDoble) bonos += 1726
                                         bonos += (parseInt(estObregon) || 0) * 600
-                                        bonos += (parseInt(estMochis)  || 0) * 300
+                                        bonos += (parseInt(estMochis) || 0) * 300
                                     }
 
                                     const total = dieselIncentive + quimico + bonos

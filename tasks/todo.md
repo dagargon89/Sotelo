@@ -30,6 +30,40 @@ Estado: `BLOQUEADO` para QA Final / Despliegue.
 ---
 
 ## Futuro / Fase 3 (Propuesto)
-- [ ] Persistencia de datos en MySQL (Historial de nóminas).
 - [ ] Módulo de reportes de utilidad por flete/camión.
 - [ ] Login y RBAC (Roles de Usuario).
+
+---
+
+## Fase 3: Migración a CodeIgniter 4 + MySQL (EN CURSO)
+Estado: `EN PROGRESO`.
+
+### Hito 1: Base CI4 y Persistencia (DONE)
+- [x] Inicializar backend CI4 en `backend/`.
+- [x] Configurar conexión MySQL por `backend/.env`.
+- [x] Crear migraciones base (unidades, rutas, pacífico, tabulador, sesiones, auditoría).
+- [x] Ejecutar migraciones y seeders iniciales en entorno remoto.
+
+### Hito 2: Paridad API Legacy (EN PROGRESO)
+- [x] Implementar `POST /api/upload` con procesamiento CSV real.
+- [x] Implementar `POST /api/calculate` con lógica migrada de cálculo.
+- [x] Implementar catálogos (`/api/catalogs/rendimientos`, `/api/catalogs/rutas`, `/api/catalogs/keywords`).
+- [x] Implementar sesiones pendientes (`/api/sessions/save`, `/api/sessions/pending`, `/api/sessions/restore`).
+- [x] Completar catálogo de rutas al 100% contra legacy.
+- [ ] Cerrar equivalencia funcional completa de `upload.php` en casos borde.
+
+### Hito 3: Tabulador Versionado (PENDIENTE)
+- [x] Exponer endpoints base (`consultar`, `versiones`, `activar`, `upload`).
+- [ ] Implementar carga masiva funcional en `POST /api/tabulador/upload`.
+- [ ] Implementar reglas completas de resolución de tarifa versionada.
+
+### Hito 4: Frontend Integrado (EN PROGRESO)
+- [x] Consumir catálogos desde API (sin hardcode en cards principales).
+- [x] Persistir token de sesión y restauración de pendientes al iniciar.
+- [x] Compilar frontend producción (`npm run build`) sin errores.
+- [ ] Resolver warnings de hooks (`react-hooks/exhaustive-deps`).
+
+### Hito 5: Verificación y Cierre (PENDIENTE)
+- [ ] Prueba de regresión con CSV histórico vs salida legacy.
+- [ ] Documentar diferencias aceptadas/no aceptadas de cálculo.
+- [ ] Preparar paquete de despliegue final Site5 (frontend + backend CI4).

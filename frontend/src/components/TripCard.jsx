@@ -18,19 +18,19 @@ export default function TripCard({ trip, onUpdate, dieselPrice }) {
         const allowed = trip.Allowed_Liters
         const actual = parseFloat(inLiters) || 0
         const savings = allowed - actual
-        
+
         // Use manual price if set, otherwise global dieselPrice, otherwise trip's original Diesel_Rate
         const price = parseFloat(inPrice) > 0 ? parseFloat(inPrice) : (parseFloat(dieselPrice) || trip.Diesel_Rate)
         const incentive = savings * price
-        
+
         let extras = 0
         if (inQuimico) extras += 250
-        
+
         const total = trip.Base_Pay + incentive + extras
         return { savings, incentive, total }
     }
 
-    const { incentive, total } = calc(liters, priceInput, bonoQuimico)
+    const { incentive } = calc(liters, priceInput, bonoQuimico)
     const isPositive = incentive >= 0
 
     // React to diesel price changes
@@ -105,13 +105,13 @@ export default function TripCard({ trip, onUpdate, dieselPrice }) {
 
     return (
         <div className="glass-panel subtle-shadow rounded-3xl overflow-hidden mb-8 transition-all hover:shadow-lg">
-            
+
             {/* Header Section */}
             <div className="px-8 py-6 flex flex-wrap justify-between items-center border-b border-gray-100/50">
                 <div className="flex items-center gap-5">
                     {/* Avatar */}
                     <div className="w-12 h-12 rounded-2xl bg-gray-100 flex items-center justify-center text-gray-700 font-semibold text-lg border border-gray-200">
-                        {trip.Driver ? trip.Driver.substring(0,2).toUpperCase() : 'DR'}
+                        {trip.Driver ? trip.Driver.substring(0, 2).toUpperCase() : 'DR'}
                     </div>
                     <div>
                         <h2 className="text-[19px] font-semibold tracking-tight text-gray-900">{trip.Driver}</h2>
@@ -161,7 +161,7 @@ export default function TripCard({ trip, onUpdate, dieselPrice }) {
 
             {/* Route & Grid Matrix Section */}
             <div className="flex flex-col xl:flex-row divide-y xl:divide-y-0 xl:divide-x divide-gray-100/50">
-                
+
                 {/* Route Minimal */}
                 <div className="px-8 py-8 xl:w-5/12 flex flex-col justify-center">
                     <div className="flex items-start gap-4 mb-6">
@@ -181,7 +181,7 @@ export default function TripCard({ trip, onUpdate, dieselPrice }) {
                             </div>
                         </div>
                     </div>
-                    
+
                     <div className="flex gap-8 bg-gray-50/50 p-4 rounded-2xl border border-gray-100/80 mt-auto">
                         <div>
                             <p className="text-[11px] text-gray-500 uppercase font-medium tracking-wide mb-1">Distancia</p>
@@ -198,9 +198,9 @@ export default function TripCard({ trip, onUpdate, dieselPrice }) {
                 {/* Financial Clean Grid */}
                 <div className="px-8 py-8 xl:w-7/12 flex flex-col">
                     <h3 className="text-[13px] font-medium text-gray-900 mb-6 flex items-center gap-2">
-                         Cálculo de Nómina
+                        Cálculo de Nómina
                     </h3>
-                    
+
                     <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
                         <div className="bg-gray-50/80 p-4 rounded-2xl">
                             <p className="text-[11px] text-gray-500 font-medium mb-1">BASE</p>
@@ -234,24 +234,24 @@ export default function TripCard({ trip, onUpdate, dieselPrice }) {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-auto">
                         <div>
                             <label className="block text-[11px] font-semibold text-gray-700 mb-2">LITROS REALES</label>
-                            <input 
-                                type="number" 
+                            <input
+                                type="number"
                                 value={liters}
                                 onChange={(e) => handleInputs(e.target.value, priceInput, bonoQuimico)}
-                                placeholder="0.00" 
-                                className="w-full bg-white border border-gray-200 text-gray-900 text-[15px] font-medium rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-transparent block px-4 py-2.5 transition-all shadow-sm" 
+                                placeholder="0.00"
+                                className="w-full bg-white border border-gray-200 text-gray-900 text-[15px] font-medium rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-transparent block px-4 py-2.5 transition-all shadow-sm"
                             />
                         </div>
                         <div>
                             <label className="block text-[11px] font-semibold text-gray-700 mb-2">PRECIO POR LITRO</label>
                             <div className="relative">
                                 <span className="absolute inset-y-0 left-0 flex items-center pl-4 text-gray-500">$</span>
-                                <input 
-                                    type="number" 
+                                <input
+                                    type="number"
                                     value={priceInput}
                                     onChange={(e) => handleInputs(liters, e.target.value, bonoQuimico)}
-                                    placeholder={trip.Diesel_Rate} 
-                                    className="w-full bg-white border border-gray-200 text-gray-900 text-[15px] font-medium rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-transparent block pl-8 pr-4 py-2.5 transition-all shadow-sm" 
+                                    placeholder={trip.Diesel_Rate}
+                                    className="w-full bg-white border border-gray-200 text-gray-900 text-[15px] font-medium rounded-xl focus:ring-2 focus:ring-gray-900 focus:border-transparent block pl-8 pr-4 py-2.5 transition-all shadow-sm"
                                 />
                             </div>
                         </div>
@@ -279,7 +279,7 @@ export default function TripCard({ trip, onUpdate, dieselPrice }) {
                             {trip.Legs.length} Piernas
                         </span>
                     </div>
-                    
+
                     {showLegs && (
                         <div className="px-8 pb-8 pt-4">
                             <div className="overflow-x-auto rounded-2xl border border-gray-100">
@@ -321,7 +321,7 @@ export default function TripCard({ trip, onUpdate, dieselPrice }) {
 
             {/* Footer: Complements & Action */}
             <div className="p-6 md:px-8 md:py-6 border-t border-gray-100/50 flex flex-col md:flex-row justify-between items-center gap-6 bg-white/40">
-                
+
                 <div className="flex flex-wrap items-center gap-x-8 gap-y-4 w-full md:w-auto">
                     {/* Pacific Options Only Visible If Is_Pacifico */}
                     {trip.Is_Pacifico && trip.Status === 'NEEDS_INPUT' && (
@@ -331,7 +331,7 @@ export default function TripCard({ trip, onUpdate, dieselPrice }) {
                                 <input type="checkbox" checked={pacLoaded} onChange={e => setPacLoaded(e.target.checked)} className="w-4 h-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900 transition-colors cursor-pointer" />
                                 <span className="text-[13px] font-medium text-gray-700 group-hover:text-gray-900">Viaje Cargado</span>
                             </label>
-                            
+
                             {/* Bono Sierra toggle */}
                             <label className="flex items-center gap-3 cursor-pointer group">
                                 <input type="checkbox" checked={bonoSierra} onChange={e => setBonoSierra(e.target.checked)} className="w-4 h-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900 transition-colors cursor-pointer" />

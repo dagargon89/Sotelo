@@ -24,3 +24,5 @@ Este documento registra patrones críticos detectados durante el desarrollo para
 ### Migracion a CodeIgniter 4
 - En la transición a CI4 mantener compatibilidad de contratos (`/api/upload`, `/api/calculate`) para no romper React mientras se migra la lógica interna por etapas.
 - Las credenciales de MySQL deben ir solo en `backend/.env` y nunca en código fuente versionado.
+- En sesiones pendientes, marcar explícitamente la sesión como restaurada después de cargarla en frontend para evitar recarga infinita del mismo pendiente al refrescar.
+- Para CSV grandes en `upload`, definir margen de memoria razonable en backend antes de procesar para evitar errores por `memory_limit` durante parsing/agrupación.

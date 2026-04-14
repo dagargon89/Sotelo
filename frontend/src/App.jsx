@@ -1,21 +1,60 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import FileUpload from './components/FileUpload'
 import TripList from './components/TripList'
 import SummaryBar from './components/SummaryBar'
 import PeriodSelector from './components/PeriodSelector'
 import DashboardKPIs from './components/DashboardKPIs'
-import { buildApiUrl } from './api'
+import { buildApiUrl, fetchRendimientos, loadPendingSession, restorePendingSession, savePendingSession } from './api'
 
 function App() {
   const [trips, setTrips] = useState([])
   const [loading, setLoading] = useState(false)
+  const [catalogLoading, setCatalogLoading] = useState(true)
+  const [unitYields, setUnitYields] = useState({})
+  const [defaultYield, setDefaultYield] = useState(2.37341)
   const [selectedWeek, setSelectedWeek] = useState(null)
   const [activeTab, setActiveTab] = useState('NEEDS_INPUT') // 'NEEDS_INPUT' | 'PENDING' | 'APPROVED'
   const [dieselPrice, setDieselPrice] = useState(24.50)
   const [driverFilter, setDriverFilter] = useState('')
+  const [sessionToken] = useState(() => {
+    const key = 'sotelo_session_token'
+    const existing = localStorage.getItem(key)
+    if (existing) return existing
+    const generated = `${Date.now()}_${Math.random().toString(36).slice(2, 12)}`
+    localStorage.setItem(key, generated)
+    return generated
+  })
+
+  useEffect(() => {
+    const init = async () => {
+      try {
+        const [catalogData, sessionData] = await Promise.all([
+          fetchRendimientos(),
+          loadPendingSession(sessionToken),
+        ])
+
+        setUnitYields(catalogData.rendimientos || {})
+        setDefaultYield(catalogData.default_yield || 2.37341)
+
+        if (sessionData?.session?.datos_boleta_json) {
+          const parsed = JSON.parse(sessionData.session.datos_boleta_json)
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            setTrips(parsed)
+            await restorePendingSession(sessionToken)
+          }
+        }
+      } catch (err) {
+        console.warn('No se pudo inicializar catalogos/sesion:', err)
+      } finally {
+        setCatalogLoading(false)
+      }
+    }
+
+    init()
+  }, [sessionToken])
 
   // Derive available weeks from trips
-  const availableWeeks = [...new Set(trips.map(t => t.Payroll_Week || 0))].filter(w => w > 0)
+  const availableWeeks = useMemo(() => [...new Set(trips.map(t => t.Payroll_Week || 0))].filter(w => w > 0), [trips])
 
   // Derive unique driver names for the current week
   const availableDrivers = [...new Set(
@@ -25,10 +64,10 @@ function App() {
   // Filter trips based on selection
   const visibleTrips = selectedWeek
     ? (selectedWeek === 'ALL' ? trips : trips.filter(t => {
-        const matchWeek = t.Payroll_Week === selectedWeek && t.Status === activeTab
-        const matchDriver = !driverFilter || (t.Driver || '').toLowerCase().includes(driverFilter.toLowerCase())
-        return matchWeek && matchDriver
-      }))
+      const matchWeek = t.Payroll_Week === selectedWeek && t.Status === activeTab
+      const matchDriver = !driverFilter || (t.Driver || '').toLowerCase().includes(driverFilter.toLowerCase())
+      return matchWeek && matchDriver
+    }))
     : []
 
   const handleFileUpload = async (file) => {
@@ -42,6 +81,7 @@ function App() {
     try {
       const res = await fetch(buildApiUrl('/api/upload'), {
         method: 'POST',
+        headers: { 'X-Session-Token': sessionToken },
         body: formData
       })
       const data = await res.json()
@@ -52,6 +92,8 @@ function App() {
         return;
       }
       setTrips(data.trips)
+      const semanaNomina = data?.trips?.[0]?.Payroll_Week || null
+      await savePendingSession(sessionToken, data.trips, semanaNomina)
     } catch (err) {
       alert("Error al subir el archivo: " + err.message)
     } finally {
@@ -142,10 +184,22 @@ function App() {
               </div>
             </div>
 
-            <TripList trips={visibleTrips} onUpdate={handleRecalculate} dieselPrice={dieselPrice} />
+            <TripList
+              trips={visibleTrips}
+              onUpdate={handleRecalculate}
+              dieselPrice={dieselPrice}
+              unitYields={unitYields}
+              defaultYield={defaultYield}
+            />
           </>
         )}
       </main>
+
+      {catalogLoading && (
+        <div className="fixed bottom-4 right-4 bg-slate-900 text-white text-xs px-3 py-2 rounded-lg shadow">
+          Cargando catalogos...
+        </div>
+      )}
 
       {selectedWeek && visibleTrips.length > 0 && (
         <SummaryBar
