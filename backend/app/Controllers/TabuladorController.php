@@ -218,6 +218,51 @@ class TabuladorController extends BaseController
         ]);
     }
 
+    public function desactivar()
+    {
+        $payload = $this->request->getJSON(true) ?? [];
+        $version = (int) ($payload['version'] ?? 0);
+        if ($version <= 0) {
+            return $this->response->setStatusCode(400)->setJSON(['detail' => 'version invalida']);
+        }
+
+        $model = new TabuladorModel();
+        $exists = $model->where('version', $version)->countAllResults();
+        if ($exists === 0) {
+            return $this->response->setStatusCode(404)->setJSON(['detail' => "La versi\u00f3n {$version} no existe."]);
+        }
+
+        $model->set('is_active', 0)->where('version', $version)->update();
+
+        return $this->response->setJSON([
+            'ok'      => true,
+            'version' => $version,
+            'tarifas' => $exists,
+        ]);
+    }
+
+    public function eliminarVersion(int $version)
+    {
+        if ($version <= 0) {
+            return $this->response->setStatusCode(400)->setJSON(['detail' => 'version invalida']);
+        }
+
+        $model = new TabuladorModel();
+        $total = $model->where('version', $version)->countAllResults();
+        if ($total === 0) {
+            return $this->response->setStatusCode(404)->setJSON(['detail' => "La versi\u00f3n {$version} no existe."]);
+        }
+
+        // Hard delete de todos los registros de esta versión
+        $model->where('version', $version)->delete(null, true);
+
+        return $this->response->setJSON([
+            'ok'      => true,
+            'version' => $version,
+            'eliminados' => $total,
+        ]);
+    }
+
     private function normalizeNullable($value): ?string
     {
         if ($value === null) {

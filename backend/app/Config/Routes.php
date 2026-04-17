@@ -23,6 +23,8 @@ $routes->group('api', static function (RouteCollection $routes): void {
 	$routes->get('tabulador/versiones', 'TabuladorController::versiones');
 	$routes->post('tabulador/upload', 'TabuladorController::upload');
 	$routes->post('tabulador/activar', 'TabuladorController::activar');
+	$routes->post('tabulador/desactivar', 'TabuladorController::desactivar');
+	$routes->delete('tabulador/version/(:num)', 'TabuladorController::eliminarVersion/$1');
 
 	$routes->get('sessions/pending', 'SessionController::pending');
 	$routes->post('sessions/save', 'SessionController::save');

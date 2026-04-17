@@ -143,4 +143,32 @@ export async function listTabuladorVersiones() {
   const res = await fetch(buildApiUrl('/api/tabulador/versiones'))
   if (!res.ok) throw new Error('No se pudieron cargar las versiones del tabulador')
   return res.json()
-}
+}
+
+/**
+ * Desactiva todos los registros de una versión específica.
+ * @param {number} version
+ */
+export async function deactivateTabuladorVersion(version) {
+  const res = await fetch(buildApiUrl('/api/tabulador/desactivar'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ version }),
+  })
+  const data = await res.json()
+  if (!res.ok) throw new Error(data?.detail || `Error ${res.status}`)
+  return data
+}
+
+/**
+ * Elimina físicamente todos los registros de una versión.
+ * @param {number} version
+ */
+export async function deleteTabuladorVersion(version) {
+  const res = await fetch(buildApiUrl(`/api/tabulador/version/${version}`), {
+    method: 'DELETE',
+  })
+  const data = await res.json()
+  if (!res.ok) throw new Error(data?.detail || `Error ${res.status}`)
+  return data
+}

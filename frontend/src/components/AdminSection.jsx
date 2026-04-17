@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { adminApi, uploadTabulador, activateTabuladorVersion, listTabuladorVersiones } from '../api'
+import { adminApi, uploadTabulador, activateTabuladorVersion, deactivateTabuladorVersion, deleteTabuladorVersion, listTabuladorVersiones, buildApiUrl } from '../api'
 import { SHOW_NEW_BADGES } from '../constants'
 
 // Badge visual temporal
@@ -10,6 +10,119 @@ const NewBadge = () => SHOW_NEW_BADGES ? (
 ) : null
 
 const TABS = ['unidades', 'rutas', 'keywords', 'tabulador', 'audit', 'liquidaciones']
+
+/**
+ * Tarjeta de versión del tabulador con acciones inline de confirm.
+ */
+function VersionCard({ v, tabActivating, onActivar, onDesactivar, onEliminar }) {
+  const [confirmEliminar, setConfirmEliminar] = useState(false)
+  const isActive = Number(v.activa) === 1
+
+  return (
+    <div className={`rounded-2xl border transition-all overflow-hidden ${isActive ? 'border-emerald-200 shadow-sm shadow-emerald-100' : 'border-slate-200'}`}>
+      <div className={`p-4 ${isActive ? 'bg-emerald-50' : 'bg-white'}`}>
+        {/* Cabecera */}
+        <div className="flex items-start justify-between mb-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-mono font-bold text-lg text-slate-900">v{v.version}</span>
+              {isActive && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500 text-white text-[10px] font-bold uppercase">
+                  <i className="fas fa-circle text-[6px]"></i> Activa
+                </span>
+              )}
+            </div>
+            <p className="text-xs text-slate-400 mt-0.5">{Number(v.total).toLocaleString()} tarifas</p>
+            {v.fecha_carga && (
+              <p className="text-[10px] text-slate-300 mt-0.5">
+                {new Date(v.fecha_carga).toLocaleDateString('es-MX', { day: '2-digit', month: 'short', year: 'numeric' })}
+              </p>
+            )}
+          </div>
+          <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${isActive ? 'bg-emerald-100' : 'bg-slate-100'}`}>
+            <i className={`fas fa-database text-sm ${isActive ? 'text-emerald-600' : 'text-slate-400'}`}></i>
+          </div>
+        </div>
+
+        {/* Botones */}
+        {confirmEliminar ? (
+          <div className="flex gap-2 items-center">
+            <span className="text-xs text-red-600 font-semibold flex-1">¿Eliminar v{v.version}?</span>
+            <button onClick={() => { onEliminar(v.version); setConfirmEliminar(false) }} disabled={tabActivating} className="px-2 py-1 rounded-lg text-[11px] font-bold bg-red-500 text-white hover:bg-red-600 disabled:opacity-50">Sí</button>
+            <button onClick={() => setConfirmEliminar(false)} className="px-2 py-1 rounded-lg text-[11px] font-semibold bg-slate-200 text-slate-700 hover:bg-slate-300">No</button>
+          </div>
+        ) : (
+          <div className="flex flex-wrap gap-1.5">
+            {!isActive && (
+              <button onClick={() => onActivar(v.version)} disabled={tabActivating} className="flex-1 flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-bold bg-emerald-500 text-white hover:bg-emerald-600 disabled:opacity-50 transition-colors">
+                <i className="fas fa-check"></i> Activar
+              </button>
+            )}
+            {isActive && (
+              <button onClick={() => onDesactivar(v.version)} disabled={tabActivating} className="flex-1 flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-bold bg-amber-100 text-amber-700 hover:bg-amber-200 disabled:opacity-50 transition-colors">
+                <i className="fas fa-pause"></i> Desactivar
+              </button>
+            )}
+            <button onClick={() => setConfirmEliminar(true)} disabled={tabActivating} className="flex items-center justify-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-bold bg-red-50 text-red-600 hover:bg-red-100 disabled:opacity-50 transition-colors border border-red-100">
+              <i className="fas fa-trash-alt"></i>
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+/**
+ * Sección colapsable que contiene el grid de tarjetas de versiones.
+ */
+function VersionesSection({ tabVersiones, tabActivating, onActivar, onDesactivar, onEliminar }) {
+  const [open, setOpen] = useState(true)
+  const totalTarifas = tabVersiones.reduce((s, v) => s + Number(v.total), 0)
+  const activa = tabVersiones.find(v => Number(v.activa) === 1)
+
+  return (
+    <div className="rounded-2xl border border-slate-200 overflow-hidden">
+      {/* Header clickeable */}
+      <button
+        onClick={() => setOpen(o => !o)}
+        className="w-full flex items-center justify-between px-5 py-3.5 bg-white hover:bg-slate-50 transition-colors"
+      >
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center">
+            <i className="fas fa-layer-group text-blue-600 text-sm"></i>
+          </div>
+          <div className="text-left">
+            <p className="font-bold text-slate-800 text-sm">Versiones del Tabulador</p>
+            <p className="text-[11px] text-slate-400 mt-0.5">
+              {tabVersiones.length} versión{tabVersiones.length !== 1 ? 'es' : ''} · {totalTarifas.toLocaleString()} tarifas totales
+              {activa && <span className="ml-2 text-emerald-600 font-semibold">· v{activa.version} activa</span>}
+            </p>
+          </div>
+        </div>
+        <i className={`fas fa-chevron-${open ? 'up' : 'down'} text-slate-400 text-xs`}></i>
+      </button>
+
+      {/* Grid colapsable */}
+      {open && (
+        <div className="p-4 pt-0 bg-slate-50 border-t border-slate-100">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-4">
+            {tabVersiones.map(v => (
+              <VersionCard
+                key={v.version}
+                v={v}
+                tabActivating={tabActivating}
+                onActivar={onActivar}
+                onDesactivar={onDesactivar}
+                onEliminar={onEliminar}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
 
 /**
  * Componente de tabla responsiva con búsqueda, paginación y ordenamiento.
@@ -347,10 +460,33 @@ function AdminSection() {
 
   // ── Activar versión del tabulador ────────────────────────────────────────
   const handleActivarVersion = async (version) => {
-    if (!window.confirm(`¿Activar versión v${version}? Las demás versiones quedarán inactivas.`)) return
     setTabActivating(true)
     try {
       await activateTabuladorVersion(version)
+      await loadData()
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setTabActivating(false)
+    }
+  }
+
+  const handleDesactivarVersion = async (version) => {
+    setTabActivating(true)
+    try {
+      await deactivateTabuladorVersion(version)
+      await loadData()
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setTabActivating(false)
+    }
+  }
+
+  const handleEliminarVersion = async (version, total) => {
+    setTabActivating(true)
+    try {
+      await deleteTabuladorVersion(version)
       await loadData()
     } catch (err) {
       setError(err.message)
@@ -666,37 +802,15 @@ function AdminSection() {
               </div>
             )}
 
-            {/* Panel de versiones disponibles — NUEVO */}
+            {/* ── Panel de versiones ───────────────────────────────────── */}
             {tabVersiones.length > 0 && (
-              <div className="border rounded-lg p-4 border-slate-200">
-                <h4 className="text-sm font-semibold text-slate-800 mb-3 flex items-center">
-                  Versiones del tabulador <NewBadge />
-                </h4>
-                <div className="flex flex-wrap gap-2">
-                  {tabVersiones.map(v => (
-                    <div key={v.version} className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm ${
-                      Number(v.activa) === 1
-                        ? 'bg-emerald-50 border-emerald-300 text-emerald-800'
-                        : 'bg-white border-slate-200 text-slate-700'
-                    }`}>
-                      <span className="font-mono font-semibold">v{v.version}</span>
-                      <span className="text-xs text-slate-400">{v.total} tarifas</span>
-                      {Number(v.activa) === 1
-                        ? <span className="text-[10px] font-bold text-emerald-600 uppercase">activa</span>
-                        : (
-                          <button
-                            onClick={() => handleActivarVersion(v.version)}
-                            disabled={tabActivating}
-                            className="text-[10px] font-semibold text-blue-600 hover:text-blue-800 disabled:opacity-50"
-                          >
-                            Activar
-                          </button>
-                        )
-                      }
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <VersionesSection
+                tabVersiones={tabVersiones}
+                tabActivating={tabActivating}
+                onActivar={handleActivarVersion}
+                onDesactivar={handleDesactivarVersion}
+                onEliminar={handleEliminarVersion}
+              />
             )}
 
             {/* Formulario individual */}
