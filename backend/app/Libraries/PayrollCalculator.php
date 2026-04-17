@@ -103,17 +103,17 @@ class PayrollCalculator
                 $bonuses += (int) ($trip['Manual_Pac_Estancia_Mochis'] ?? 0) * 300.0;
 
                 $trip['Base_Pay'] = $basePay;
-                $totalPay         = $basePay + $bonuses + $totalIncentive + $bonoQuimicoVal;
+                $totalPay         = $basePay + $bonuses + $totalIncentive + $bonoQuimicoVal + $totalPagoCruce;
             } else {
                 $basePay = $totalBasePay > 0 ? $totalBasePay : (float) ($trip['Base_Pay'] ?? 0);
                 $trip['Base_Pay'] = $basePay;
-                $totalPay         = $basePay + $totalIncentive + $bonoQuimicoVal;
+                $totalPay         = $basePay + $totalIncentive + $bonoQuimicoVal + $totalPagoCruce;
             }
 
             $trip['Manual_Refuel_Liters'] = $totalRecarga;
             $trip['Allowed_Liters']       = round($totalLitrosPago, 2);
             $trip['Diesel_Savings']       = round($savings, 2);
-            $trip['Incentive_Pay']        = round($totalIncentive, 2);
+            $trip['Incentive_Pay']        = round($totalIncentive + $totalPagoCruce, 2);
             $trip['Total_Pay']            = round($totalPay, 2);
 
             // ── Campos del tabulador de tarifas de cruce ─────────────────────

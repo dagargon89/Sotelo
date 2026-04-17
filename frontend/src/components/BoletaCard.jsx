@@ -87,7 +87,8 @@ export default function BoletaCard({ trip, onUpdate, dieselPrice, unitYields = {
             bonos += (parseInt(estMochis) || 0) * 300
         }
 
-        const incentivePay = dieselIncentive + quimico + bonos
+        const pagoCruceVal = parseFloat(trip.Pago_Cruce) || 0
+        const incentivePay = dieselIncentive + quimico + bonos + pagoCruceVal
         const basePay = parseFloat(trip.Base_Pay) || 0
         const updatedRows = (trip.Rows || []).map((or, i) => ({ ...or, ...currentRowsData[i] }))
 
@@ -488,8 +489,17 @@ export default function BoletaCard({ trip, onUpdate, dieselPrice, unitYields = {
                                 })()}
                             </span>
                         </div>
-                        <div className="flex flex-col items-end">
-
+                        {trip.Pago_Cruce !== null && trip.Pago_Cruce > 0 && (
+                            <div className="flex flex-col items-end border-l border-gray-200 pl-4 ml-2">
+                                <span className="text-[10px] uppercase font-bold text-indigo-500 tracking-widest mb-1 flex items-center gap-1">
+                                    <i className="fas fa-money-bill-wave"></i> TARIFA TABULADOR
+                                </span>
+                                <span className="text-lg font-mono font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-lg">
+                                    ${(trip.Pago_Cruce || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                                </span>
+                            </div>
+                        )}
+                        <div className="flex flex-col items-end border-l border-gray-200 pl-4 ml-2">
                             <span className="text-[10px] uppercase font-bold text-green-600 tracking-widest mb-1 underline decoration-green-300">LITROS PAGO (BOLETA)</span>
                             <span className="text-lg font-mono font-bold text-slate-900">
                                 {(() => {
@@ -522,7 +532,8 @@ export default function BoletaCard({ trip, onUpdate, dieselPrice, unitYields = {
                                         bonos += (parseInt(estMochis) || 0) * 300
                                     }
 
-                                    const total = dieselIncentive + quimico + bonos
+                                    const pagoCruceVal = parseFloat(trip.Pago_Cruce) || 0
+                                    const total = dieselIncentive + quimico + bonos + pagoCruceVal
                                     return `$${total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                                 })()}
                             </span>

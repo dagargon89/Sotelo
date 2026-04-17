@@ -3,13 +3,9 @@
 
 $uri = urldecode(parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH));
 
-// Map clean API URLs to PHP files
-if ($uri === '/api/upload') {
-    require __DIR__ . '/api/upload.php';
-    exit;
-}
-if ($uri === '/api/calculate') {
-    require __DIR__ . '/api/calculate.php';
+if (strpos($uri, '/api/') === 0) {
+    $_SERVER['SCRIPT_NAME'] = '/index.php';
+    require __DIR__ . '/backend/public/index.php';
     exit;
 }
 
