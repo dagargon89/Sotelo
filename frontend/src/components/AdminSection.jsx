@@ -77,7 +77,7 @@ function VersionCard({ v, tabActivating, onActivar, onDesactivar, onEliminar }) 
  * Sección colapsable que contiene el grid de tarjetas de versiones.
  */
 function VersionesSection({ tabVersiones, tabActivating, onActivar, onDesactivar, onEliminar }) {
-  const [open, setOpen] = useState(true)
+  const [open, setOpen] = useState(false)
   const totalTarifas = tabVersiones.reduce((s, v) => s + Number(v.total), 0)
   const activa = tabVersiones.find(v => Number(v.activa) === 1)
 
