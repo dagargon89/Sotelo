@@ -136,7 +136,7 @@ class RutasController extends BaseController
             return $this->response->setStatusCode(404)->setJSON(['detail' => 'Ruta no encontrada']);
         }
 
-        $model->update($id, ['is_active' => 0]);
+        $model->delete($id, true);
 
         return $this->response->setJSON(['ok' => true, 'id' => $id]);
     }

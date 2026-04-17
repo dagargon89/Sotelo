@@ -16,7 +16,7 @@ const TABS = ['unidades', 'rutas', 'keywords', 'tabulador', 'audit', 'liquidacio
  */
 function AdminDataTable({ rows, loading, tab, onToggleActive, onDelete, onEdit }) {
   const [search, setSearch] = useState('')
-  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' })
+  const [confirmDelete, setConfirmDelete] = useState(null) // { row } or null
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 20
 
@@ -32,6 +32,7 @@ function AdminDataTable({ rows, loading, tab, onToggleActive, onDelete, onEdit }
   }, [rows, search])
 
   // ── Ordenamiento ─────────────────────────────────────────────────────────
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' })
   const sortedRows = useMemo(() => {
     let sortableItems = [...filteredRows]
     if (sortConfig.key !== null) {
@@ -143,30 +144,51 @@ function AdminDataTable({ rows, loading, tab, onToggleActive, onDelete, onEdit }
                     </td>
                   ))}
                   {hasActions && (
-                    <td className="px-4 py-3 whitespace-nowrap text-right space-x-1">
-                      <div className="flex justify-end opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                          onClick={() => onToggleActive(row)}
-                          title={Number(row.is_active) === 1 ? 'Desactivar' : 'Activar'}
-                          className={`p-2 rounded-lg transition-colors ${Number(row.is_active) === 1 ? 'text-amber-600 hover:bg-amber-50' : 'text-emerald-600 hover:bg-emerald-50'}`}
-                        >
-                          <i className={`fas fa-power-off`}></i>
-                        </button>
-                        <button
-                          onClick={() => onEdit(row)}
-                          title="Editar"
-                          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                        >
-                          <i className="fas fa-edit"></i>
-                        </button>
-                        <button
-                          onClick={() => onDelete(row)}
-                          title="Eliminar"
-                          className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                        >
-                          <i className="fas fa-trash-alt"></i>
-                        </button>
-                      </div>
+                    <td className="px-4 py-3 whitespace-nowrap text-right">
+                      {confirmDelete?.row?.id === row.id ? (
+                        <div className="flex justify-end items-center gap-1">
+                          <span className="text-xs text-red-600 font-semibold mr-1">¿Confirmar?</span>
+                          <button
+                            onClick={() => { onDelete(row); setConfirmDelete(null) }}
+                            className="px-2 py-1 rounded text-xs font-bold bg-red-500 text-white hover:bg-red-600 transition-colors"
+                          >
+                            Sí, borrar
+                          </button>
+                          <button
+                            onClick={() => setConfirmDelete(null)}
+                            className="px-2 py-1 rounded text-xs font-semibold bg-slate-200 text-slate-700 hover:bg-slate-300 transition-colors"
+                          >
+                            Cancelar
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex justify-end items-center gap-1">
+                          {'is_active' in row && (
+                            <button
+                              onClick={() => onToggleActive(row)}
+                              className={`px-2 py-1 rounded text-xs font-semibold transition-colors ${
+                                Number(row.is_active) === 1
+                                  ? 'bg-amber-100 text-amber-700 hover:bg-amber-200'
+                                  : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'
+                              }`}
+                            >
+                              {Number(row.is_active) === 1 ? 'Desactivar' : 'Activar'}
+                            </button>
+                          )}
+                          <button
+                            onClick={() => onEdit(row)}
+                            className="px-2 py-1 rounded text-xs font-semibold bg-blue-100 text-blue-700 hover:bg-blue-200 transition-colors"
+                          >
+                            Editar
+                          </button>
+                          <button
+                            onClick={() => setConfirmDelete({ row })}
+                            className="px-2 py-1 rounded text-xs font-semibold bg-red-100 text-red-700 hover:bg-red-200 transition-colors"
+                          >
+                            Borrar
+                          </button>
+                        </div>
+                      )}
                     </td>
                   )}
                 </tr>
@@ -242,9 +264,9 @@ function AdminSection() {
     setError('')
     try {
       let result
-      if (tab === 'unidades') result = await adminApi.listUnidades('include_inactive=1')
-      if (tab === 'rutas') result = await adminApi.listRutas('include_inactive=1')
-      if (tab === 'keywords') result = await adminApi.listKeywords('include_inactive=1')
+      if (tab === 'unidades') result = await adminApi.listUnidades('')
+      if (tab === 'rutas') result = await adminApi.listRutas('')
+      if (tab === 'keywords') result = await adminApi.listKeywords('')
       if (tab === 'tabulador') {
         result = await adminApi.listTabulador('include_inactive=1')
         // Cargar versiones disponibles en paralelo
@@ -348,14 +370,15 @@ function AdminSection() {
   }
 
   const handleDelete = async (row) => {
-    if (!window.confirm(`Desactivar registro #${row.id}?`)) return
-
-    if (tab === 'unidades') await adminApi.deleteUnidad(row.id)
-    if (tab === 'rutas') await adminApi.deleteRuta(row.id)
-    if (tab === 'keywords') await adminApi.deleteKeyword(row.id)
-    if (tab === 'tabulador') await adminApi.deleteTabulador(row.id)
-
-    await loadData()
+    try {
+      if (tab === 'unidades') await adminApi.deleteUnidad(row.id)
+      if (tab === 'rutas') await adminApi.deleteRuta(row.id)
+      if (tab === 'keywords') await adminApi.deleteKeyword(row.id)
+      if (tab === 'tabulador') await adminApi.deleteTabulador(row.id)
+      await loadData()
+    } catch (err) {
+      setError(`Error al borrar: ${err.message}`)
+    }
   }
 
   const handleEdit = async (row) => {
