@@ -88,3 +88,59 @@ export const adminApi = {
   listAuditLogs: (params = '') => adminRequest(`audit-logs${params ? `?${params}` : ''}`),
   listLiquidaciones: (params = '') => adminRequest(`liquidaciones${params ? `?${params}` : ''}`),
 }
+
+// ── Funciones del tabulador de tarifas (cruces) ─────────────────────────────
+
+/**
+ * Consulta la tarifa aplicable para un movimiento específico.
+ * @param {{ tipo: string, cruce?: string, origen?: string, destino?: string }} params
+ */
+export async function getTarifaPreview(params) {
+  const query = new URLSearchParams(
+    Object.fromEntries(Object.entries(params).filter(([, v]) => v != null && v !== ''))
+  ).toString()
+  const res = await fetch(buildApiUrl(`/api/tabulador?${query}`))
+  if (!res.ok) throw new Error('No se pudo consultar la tarifa')
+  return res.json()
+}
+
+/**
+ * Sube un archivo CSV con las tarifas del tabulador.
+ * La versión se crea como inactiva; activar con activateTabuladorVersion().
+ * @param {File} file
+ */
+export async function uploadTabulador(file) {
+  const formData = new FormData()
+  formData.append('file', file)
+  const res = await fetch(buildApiUrl('/api/tabulador/upload'), {
+    method: 'POST',
+    body: formData,
+  })
+  const data = await res.json()
+  if (!res.ok) throw new Error(data?.detail || `Error ${res.status}`)
+  return data
+}
+
+/**
+ * Activa una versión específica del tabulador (desactiva las demás).
+ * @param {number} version
+ */
+export async function activateTabuladorVersion(version) {
+  const res = await fetch(buildApiUrl('/api/tabulador/activar'), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ version }),
+  })
+  const data = await res.json()
+  if (!res.ok) throw new Error(data?.detail || `Error ${res.status}`)
+  return data
+}
+
+/**
+ * Lista las versiones disponibles del tabulador con resumen de tarifas.
+ */
+export async function listTabuladorVersiones() {
+  const res = await fetch(buildApiUrl('/api/tabulador/versiones'))
+  if (!res.ok) throw new Error('No se pudieron cargar las versiones del tabulador')
+  return res.json()
+}

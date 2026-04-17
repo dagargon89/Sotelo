@@ -138,6 +138,8 @@ class BoletaProcessor
                     'Tipo' => trim((string) ($row['Tipo'] ?? '')),
                     'Estatus_Flete' => trim((string) ($row['Estatus flete'] ?? '')),
                     'Is_Loaded' => $isLoaded,
+                    // Campo necesario para que PayrollCalculator consulte el tabulador de tarifas
+                    'Cruce' => $isCruce ? 'PUENTE ZARAGOZA' : null,
                 ];
             }
 

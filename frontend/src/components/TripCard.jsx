@@ -1,5 +1,13 @@
 import { useState, useEffect } from 'react'
 import { buildApiUrl } from '../api'
+import { SHOW_NEW_BADGES } from '../constants'
+
+// Badge temporal que identifica las secciones nuevas
+const NewBadge = () => SHOW_NEW_BADGES ? (
+    <span className="inline-flex items-center gap-0.5 text-[9px] font-bold uppercase tracking-wider bg-amber-400 text-amber-900 px-1.5 py-0.5 rounded-md select-none">
+        ✦ nuevo
+    </span>
+) : null
 
 export default function TripCard({ trip, onUpdate, dieselPrice }) {
     const [liters, setLiters] = useState(trip.Manual_Refuel_Liters || '')
@@ -231,6 +239,35 @@ export default function TripCard({ trip, onUpdate, dieselPrice }) {
                         </div>
                     </div>
 
+                    {/* ── Tarifa de cruce (tabulador BD) — NUEVO ─────────────────── */}
+                    <div className="mt-3 rounded-xl border px-4 py-3 flex flex-wrap items-center gap-x-6 gap-y-1
+                        border-emerald-200 bg-emerald-50/60">
+                        <span className="text-[11px] font-semibold uppercase tracking-wider text-emerald-700 flex items-center gap-1.5">
+                            Tarifa cruce <NewBadge />
+                        </span>
+                        {trip.Fuente_Tarifa === 'TABULADOR_BD' ? (
+                            <>
+                                <span className="font-mono font-bold text-emerald-800 text-base">
+                                    ${(trip.Pago_Cruce ?? 0).toFixed(2)}
+                                </span>
+                                <span className="text-[11px] text-emerald-600 bg-emerald-100 px-2 py-0.5 rounded-md">
+                                    {trip.Regla_Aplicada}
+                                </span>
+                                <span className="text-[10px] text-emerald-500 ml-auto">
+                                    Fuente: tabulador BD
+                                </span>
+                            </>
+                        ) : (
+                            <span className="text-[11px] text-gray-400 italic">
+                                {trip.Pago_Cruce === null
+                                    ? (trip.Motivo_Sin_Tarifa === 'SIN_TARIFA_APLICABLE'
+                                        ? 'Sin tarifa en tabulador — usando pago base legacy'
+                                        : 'Tabulador no cargado — usando pago base legacy')
+                                    : 'Sin tarifa aplicable'}
+                            </span>
+                        )}
+                    </div>
+
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-auto">
                         <div>
                             <label className="block text-[11px] font-semibold text-gray-700 mb-2">LITROS REALES</label>
@@ -283,12 +320,15 @@ export default function TripCard({ trip, onUpdate, dieselPrice }) {
                     {showLegs && (
                         <div className="px-8 pb-8 pt-4">
                             <div className="overflow-x-auto rounded-2xl border border-gray-100">
-                                <table className="w-full text-left border-collapse min-w-[600px]">
+                                <table className="w-full text-left border-collapse min-w-[700px]">
                                     <thead>
                                         <tr className="bg-gray-50 border-b border-gray-100">
                                             <th className="p-4 text-[11px] font-semibold text-gray-500 uppercase">#</th>
                                             <th className="p-4 text-[11px] font-semibold text-gray-500 uppercase">Trayecto</th>
                                             <th className="p-4 text-[11px] font-semibold text-gray-500 uppercase">Estado Carga</th>
+                                            <th className="p-4 text-[11px] font-semibold text-gray-500 uppercase flex items-center gap-1">
+                                                Cruce <NewBadge />
+                                            </th>
                                             <th className="p-4 text-[11px] font-semibold text-gray-500 uppercase text-right">KMS</th>
                                         </tr>
                                     </thead>
@@ -307,6 +347,15 @@ export default function TripCard({ trip, onUpdate, dieselPrice }) {
                                                         <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded-md text-[11px] font-medium">Vacío / Transito</span>
                                                     )}
                                                     <span className="ml-2 text-[11px] text-gray-400 border border-gray-200 px-1.5 py-0.5 rounded-md">{leg.Type}</span>
+                                                </td>
+                                                <td className="p-4">
+                                                    {leg.Cruce ? (
+                                                        <span className="bg-blue-50 text-blue-700 border border-blue-200 px-2 py-1 rounded-md text-[11px] font-medium">
+                                                            {leg.Cruce}
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-gray-300 text-[11px]">—</span>
+                                                    )}
                                                 </td>
                                                 <td className="p-4 font-mono text-gray-900 text-right font-medium">{leg.Kms} km</td>
                                             </tr>

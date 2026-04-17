@@ -25,3 +25,8 @@ export const UNIT_YIELDS = {
 }
 
 export const DEFAULT_YIELD = 2.37341
+
+// ── TEMPORAL: badges visuales para identificar cambios nuevos en la UI ──
+// Cambiar a false cuando el cliente confirme la revisión visual.
+// Un solo cambio aquí apaga TODOS los badges de la aplicación.
+export const SHOW_NEW_BADGES = true
