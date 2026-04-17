@@ -125,6 +125,210 @@ function VersionesSection({ tabVersiones, tabActivating, onActivar, onDesactivar
 }
 
 /**
+ * Modal centralizada para creación y edición de registros administrativos.
+ */
+function AdminFormModal({ isOpen, onClose, mode, tab, data, onSave, loading }) {
+  const [formData, setFormData] = useState({})
+
+  useEffect(() => {
+    if (isOpen) {
+      if (mode === 'edit' && data) {
+        setFormData({ ...data })
+      } else {
+        // Valores por defecto para creación
+        if (tab === 'unidades') setFormData({ tractor: '', yield_km_l: '' })
+        if (tab === 'rutas') setFormData({ origen_normalizado: '', destino_normalizado: '', distancia_km: '', region: 'GENERAL' })
+        if (tab === 'keywords') setFormData({ keyword: '' })
+        if (tab === 'tabulador') setFormData({ tipo: '', cruce: '', origen: '', destino: '', pago_operador: '', version: 1, prioridad: 0 })
+      }
+    }
+  }, [isOpen, mode, data, tab])
+
+  if (!isOpen) return null
+
+  const title = mode === 'create' ? `Nuevo Registro: ${tab}` : `Editar: ${tab}`
+  const isTabulador = tab === 'tabulador'
+
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    onSave(formData)
+  }
+
+  const handleChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }))
+  }
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 animate-in fade-in duration-200">
+      <div 
+        className="absolute inset-0 bg-slate-900/40 backdrop-blur-md"
+        onClick={onClose}
+      />
+      
+      <div className="relative bg-white rounded-3xl shadow-2xl w-full max-w-xl overflow-hidden animate-in zoom-in-95 duration-200">
+        {/* Header del Modal */}
+        <div className="bg-slate-50 px-8 py-5 border-b border-slate-100 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${mode === 'edit' ? 'bg-blue-100 text-blue-600' : 'bg-emerald-100 text-emerald-600'}`}>
+              <i className={`fas ${mode === 'edit' ? 'fa-edit' : 'fa-plus'}`}></i>
+            </div>
+            <div>
+              <h4 className="font-bold text-slate-900 capitalize">{title}</h4>
+              <p className="text-[11px] text-slate-400">Completa la información requerida</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="w-9 h-9 rounded-xl bg-slate-200 hover:bg-red-100 hover:text-red-600 flex items-center justify-center transition-all">
+            <i className="fas fa-times"></i>
+          </button>
+        </div>
+
+        {/* Cuerpo del Formulario */}
+        <form onSubmit={handleSubmit} className="p-8 space-y-5">
+          {tab === 'unidades' && (
+            <>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Tractor</label>
+                <input 
+                  value={formData.tractor || ''} 
+                  onChange={e => handleChange('tractor', e.target.value)} 
+                  placeholder="Ej: F-123" 
+                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500/20" 
+                  required 
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Rendimiento (km/L)</label>
+                <input 
+                  type="number" step="0.00001" min="0.00001"
+                  value={formData.yield_km_l || ''} 
+                  onChange={e => handleChange('yield_km_l', e.target.value)} 
+                  placeholder="Ej: 2.5" 
+                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500/20" 
+                  required 
+                />
+              </div>
+            </>
+          )}
+
+          {tab === 'rutas' && (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5 col-span-2 sm:col-span-1">
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Origen</label>
+                <input 
+                  value={formData.origen_normalizado || ''} 
+                  onChange={e => handleChange('origen_normalizado', e.target.value)} 
+                  placeholder="Ciudad Origen" 
+                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500/20" 
+                  required 
+                />
+              </div>
+              <div className="space-y-1.5 col-span-2 sm:col-span-1">
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Destino</label>
+                <input 
+                  value={formData.destino_normalizado || ''} 
+                  onChange={e => handleChange('destino_normalizado', e.target.value)} 
+                  placeholder="Ciudad Destino" 
+                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500/20" 
+                  required 
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Distancia (KM)</label>
+                <input 
+                  type="number" step="0.1" min="0.1"
+                  value={formData.distancia_km || ''} 
+                  onChange={e => handleChange('distancia_km', e.target.value)} 
+                  placeholder="KM" 
+                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500/20" 
+                  required 
+                />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Región</label>
+                <select 
+                  value={formData.region || 'GENERAL'} 
+                  onChange={e => handleChange('region', e.target.value)} 
+                  className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 bg-white"
+                >
+                  <option value="GENERAL">GENERAL</option>
+                  <option value="PACIFICO">PACIFICO</option>
+                  <option value="CLIENTE">CLIENTE</option>
+                </select>
+              </div>
+            </div>
+          )}
+
+          {tab === 'keywords' && (
+            <div className="space-y-1.5">
+              <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Palabra Clave</label>
+              <input 
+                value={formData.keyword || ''} 
+                onChange={e => handleChange('keyword', e.target.value)} 
+                placeholder="Ej: PACIFICO" 
+                className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500/20" 
+                required 
+              />
+            </div>
+          )}
+
+          {tab === 'tabulador' && (
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1.5 col-span-2 sm:col-span-1">
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Tipo Movimiento</label>
+                <input value={formData.tipo || ''} onChange={e => handleChange('tipo', e.target.value)} placeholder="Ej: EXP-02" className="w-full border border-slate-200 rounded-xl px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500/20" required />
+              </div>
+              <div className="space-y-1.5 col-span-2 sm:col-span-1">
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Cruce</label>
+                <input value={formData.cruce || ''} onChange={e => handleChange('cruce', e.target.value)} placeholder="Opcional" className="w-full border border-slate-200 rounded-xl px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500/20" />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Origen</label>
+                <input value={formData.origen || ''} onChange={e => handleChange('origen', e.target.value)} placeholder="Opcional" className="w-full border border-slate-200 rounded-xl px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500/20" />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Destino</label>
+                <input value={formData.destino || ''} onChange={e => handleChange('destino', e.target.value)} placeholder="Opcional" className="w-full border border-slate-200 rounded-xl px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500/20" />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Pago Operador ($)</label>
+                <input type="number" step="0.01" value={formData.pago_operador || ''} onChange={e => handleChange('pago_operador', e.target.value)} className="w-full border border-slate-200 rounded-xl px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500/20" required />
+              </div>
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Prioridad</label>
+                <input type="number" value={formData.prioridad || 0} onChange={e => handleChange('prioridad', e.target.value)} className="w-full border border-slate-200 rounded-xl px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500/20" />
+              </div>
+              <div className="space-y-1.5 col-span-2">
+                <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider ml-1">Versión</label>
+                <input type="number" value={formData.version || 1} onChange={e => handleChange('version', e.target.value)} className="w-full border border-slate-200 rounded-xl px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500/20" />
+              </div>
+            </div>
+          )}
+
+          {/* Footer del Modal */}
+          <div className="pt-4 flex items-center justify-end gap-3 mt-4 border-t border-slate-100">
+            <button 
+              type="button" 
+              onClick={onClose}
+              className="px-6 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-bold text-sm hover:bg-slate-100 transition-colors"
+            >
+              Cancelar
+            </button>
+            <button 
+              type="submit"
+              disabled={loading}
+              className={`px-8 py-2.5 rounded-xl text-white font-bold text-sm shadow-lg transition-all active:scale-95 flex items-center gap-2 ${mode === 'edit' ? 'bg-blue-600 hover:bg-blue-700 shadow-blue-600/20' : 'bg-slate-900 hover:bg-slate-800 shadow-slate-900/10'}`}
+            >
+              {loading ? <i className="fas fa-spinner animate-spin"></i> : <i className={`fas ${mode === 'edit' ? 'fa-save' : 'fa-check'}`}></i>}
+              {mode === 'edit' ? 'Guardar Cambios' : 'Registrar'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  )
+}
+
+/**
  * Componente de tabla responsiva con búsqueda, paginación y ordenamiento.
  */
 function AdminDataTable({ rows, loading, tab, onToggleActive, onDelete, onEdit }) {
@@ -353,6 +557,12 @@ function AdminSection() {
   const [keyword, setKeyword] = useState('')
   const [tabuladorForm, setTabuladorForm] = useState({ tipo: '', cruce: '', origen: '', destino: '', pago_operador: '', version: 1, prioridad: 0 })
 
+  // ── Estado para Form Modal ───────────────────────────────────────────────
+  const [isFormOpen, setIsFormOpen] = useState(false)
+  const [modalMode, setModalMode] = useState('create') // 'create' | 'edit'
+  const [currentRecord, setCurrentRecord] = useState(null)
+  const [formLoading, setFormLoading] = useState(false)
+
   // ── Estado para carga CSV y versiones del tabulador ─────────────────────
   const [tabVersiones, setTabVersiones] = useState([])
   const [tabUploadFile, setTabUploadFile] = useState(null)
@@ -518,28 +728,67 @@ function AdminSection() {
     }
   }
 
-  const handleEdit = async (row) => {
-    const current = { ...row }
-    delete current.created_at
-    delete current.updated_at
+  const handleEdit = (row) => {
+    setCurrentRecord(row)
+    setModalMode('edit')
+    setIsFormOpen(true)
+  }
 
-    const input = window.prompt('Editar JSON del registro', JSON.stringify(current, null, 2))
-    if (!input) return
+  const handleOpenCreateModal = () => {
+    setCurrentRecord(null)
+    setModalMode('create')
+    setIsFormOpen(true)
+  }
 
-    let payload
+  const handleSaveModal = async (formData) => {
+    setFormLoading(true)
+    setError('')
     try {
-      payload = JSON.parse(input)
-    } catch {
-      window.alert('JSON invalido')
-      return
+      if (modalMode === 'create') {
+        const payload = { ...formData, is_active: 1 }
+        // Conversiones de tipos
+        if (tab === 'unidades') payload.yield_km_l = Number(payload.yield_km_l)
+        if (tab === 'rutas') payload.distancia_km = Number(payload.distancia_km)
+        if (tab === 'tabulador') {
+          payload.pago_operador = Number(payload.pago_operador)
+          payload.version = Number(payload.version)
+          payload.prioridad = Number(payload.prioridad)
+        }
+
+        if (tab === 'unidades') await adminApi.createUnidad(payload)
+        if (tab === 'rutas') await adminApi.createRuta(payload)
+        if (tab === 'keywords') await adminApi.createKeyword(payload)
+        if (tab === 'tabulador') await adminApi.createTabulador(payload)
+      } else {
+        // Modo edicion
+        const id = currentRecord.id
+        const payload = { ...formData }
+        delete payload.id
+        delete payload.created_at
+        delete payload.updated_at
+
+        // Conversiones de tipos
+        if (tab === 'unidades') payload.yield_km_l = Number(payload.yield_km_l)
+        if (tab === 'rutas') payload.distancia_km = Number(payload.distancia_km)
+        if (tab === 'tabulador') {
+          payload.pago_operador = Number(payload.pago_operador)
+          payload.version = Number(payload.version)
+          payload.prioridad = Number(payload.prioridad)
+        }
+
+        if (tab === 'unidades') await adminApi.updateUnidad(id, payload)
+        if (tab === 'rutas') await adminApi.updateRuta(id, payload)
+        if (tab === 'keywords') await adminApi.updateKeyword(id, payload)
+        if (tab === 'tabulador') await adminApi.updateTabulador(id, payload)
+      }
+      
+      setIsFormOpen(false)
+      await loadData()
+    } catch (err) {
+      setError(`Error al guardar: ${err.message}`)
+    } finally {
+      setFormLoading(false)
     }
-
-    if (tab === 'unidades') await adminApi.updateUnidad(row.id, payload)
-    if (tab === 'rutas') await adminApi.updateRuta(row.id, payload)
-    if (tab === 'keywords') await adminApi.updateKeyword(row.id, payload)
-    if (tab === 'tabulador') await adminApi.updateTabulador(row.id, payload)
-
-    await loadData()
   }
 
   return (
@@ -571,72 +820,38 @@ function AdminSection() {
             <h3 className="text-xl font-bold text-slate-900">{tabTitle}</h3>
             <p className="text-sm text-slate-400 mt-1">Gestión avanzada de bases de datos operativas</p>
           </div>
-          <button 
-            onClick={loadData} 
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-100 text-sm font-bold transition-all border border-blue-100"
-          >
-            <i className={`fas fa-sync-alt ${loading ? 'animate-spin' : ''}`}></i>
-            Sincronizar
-          </button>
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={loadData} 
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-50 text-blue-600 hover:bg-blue-100 text-sm font-bold transition-all border border-blue-100"
+            >
+              <i className={`fas fa-sync-alt ${loading ? 'animate-spin' : ''}`}></i>
+              Sincronizar
+            </button>
+            {['unidades', 'rutas', 'keywords', 'tabulador'].includes(tab) && (
+              <button 
+                onClick={handleOpenCreateModal} 
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-slate-900 text-white hover:bg-slate-800 text-sm font-bold transition-all shadow-lg shadow-slate-900/10"
+              >
+                <i className="fas fa-plus"></i>
+                Crear
+              </button>
+            )}
+          </div>
         </div>
 
         {error && <div className="text-sm text-red-700 bg-red-50 border border-red-200 rounded p-3">{error}</div>}
 
-        {tab === 'unidades' && (
-          <form onSubmit={handleCreateUnidad} className="bg-slate-50 p-6 rounded-2xl border border-slate-100 grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
-            <div className="space-y-1">
-              <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Tractor</label>
-              <input value={unidadForm.tractor} onChange={(e) => setUnidadForm({ ...unidadForm, tractor: e.target.value })} placeholder="Ej: F-123" className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500/20" required />
-            </div>
-            <div className="space-y-1">
-              <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Rendimiento (km/L)</label>
-              <input value={unidadForm.yield_km_l} onChange={(e) => setUnidadForm({ ...unidadForm, yield_km_l: e.target.value })} type="number" step="0.00001" min="0.00001" placeholder="Ej: 2.5" className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500/20" required />
-            </div>
-            <button className="px-6 py-2.5 rounded-xl bg-slate-900 text-white font-bold text-sm hover:bg-slate-800 transition-all shadow-lg shadow-slate-900/10">
-              <i className="fas fa-plus mr-2"></i> Registrar Unidad
-            </button>
-          </form>
-        )}
-
-        {tab === 'rutas' && (
-          <form onSubmit={handleCreateRuta} className="bg-slate-50 p-6 rounded-2xl border border-slate-100 grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
-            <div className="space-y-1">
-              <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Origen</label>
-              <input value={rutaForm.origen_normalizado} onChange={(e) => setRutaForm({ ...rutaForm, origen_normalizado: e.target.value })} placeholder="Ciudad Origen" className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500/20" required />
-            </div>
-            <div className="space-y-1">
-              <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Destino</label>
-              <input value={rutaForm.destino_normalizado} onChange={(e) => setRutaForm({ ...rutaForm, destino_normalizado: e.target.value })} placeholder="Ciudad Destino" className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500/20" required />
-            </div>
-            <div className="space-y-1">
-              <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">KM</label>
-              <input value={rutaForm.distancia_km} onChange={(e) => setRutaForm({ ...rutaForm, distancia_km: e.target.value })} type="number" step="0.1" min="0.1" placeholder="Distancia" className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500/20" required />
-            </div>
-            <div className="space-y-1">
-              <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Región</label>
-              <select value={rutaForm.region} onChange={(e) => setRutaForm({ ...rutaForm, region: e.target.value })} className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500/20 bg-white">
-                <option value="GENERAL">GENERAL</option>
-                <option value="PACIFICO">PACIFICO</option>
-                <option value="CLIENTE">CLIENTE</option>
-              </select>
-            </div>
-            <button className="px-6 py-2.5 rounded-xl bg-slate-900 text-white font-bold text-sm hover:bg-slate-800 transition-all shadow-lg shadow-slate-900/10">
-              <i className="fas fa-plus mr-2"></i> Guardar Ruta
-            </button>
-          </form>
-        )}
-
-        {tab === 'keywords' && (
-          <form onSubmit={handleCreateKeyword} className="bg-slate-50 p-6 rounded-2xl border border-slate-100 flex gap-4 items-end">
-            <div className="flex-1 space-y-1">
-              <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Nueva Palabra Clave</label>
-              <input value={keyword} onChange={(e) => setKeyword(e.target.value)} placeholder="Ej: PACIFICO" className="w-full border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-blue-500/20" required />
-            </div>
-            <button className="px-6 py-2.5 rounded-xl bg-slate-900 text-white font-bold text-sm hover:bg-slate-800 transition-all shadow-lg shadow-slate-900/10">
-              <i className="fas fa-plus mr-2"></i> Añadir
-            </button>
-          </form>
-        )}
+        {/* Formulario Modal */}
+        <AdminFormModal
+          isOpen={isFormOpen}
+          onClose={() => setIsFormOpen(false)}
+          mode={modalMode}
+          tab={tab}
+          data={currentRecord}
+          loading={formLoading}
+          onSave={handleSaveModal}
+        />
 
         {tab === 'tabulador' && (
           <div className="space-y-4">
@@ -813,40 +1028,6 @@ function AdminSection() {
               />
             )}
 
-            {/* Formulario individual */}
-            <form onSubmit={handleCreateTabulador} className="bg-white p-6 rounded-2xl border border-slate-100 grid grid-cols-1 md:grid-cols-4 gap-4 items-end shadow-inner">
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Tipo Mov</label>
-                <input value={tabuladorForm.tipo} onChange={(e) => setTabuladorForm({ ...tabuladorForm, tipo: e.target.value })} placeholder="Ej: EXP-02" className="w-full border border-slate-200 rounded-xl px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500/20" required />
-              </div>
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Cruce</label>
-                <input value={tabuladorForm.cruce} onChange={(e) => setTabuladorForm({ ...tabuladorForm, cruce: e.target.value })} placeholder="Opcional" className="w-full border border-slate-200 rounded-xl px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500/20" />
-              </div>
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Origen</label>
-                <input value={tabuladorForm.origen} onChange={(e) => setTabuladorForm({ ...tabuladorForm, origen: e.target.value })} placeholder="Opcional" className="w-full border border-slate-200 rounded-xl px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500/20" />
-              </div>
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Destino</label>
-                <input value={tabuladorForm.destino} onChange={(e) => setTabuladorForm({ ...tabuladorForm, destino: e.target.value })} placeholder="Opcional" className="w-full border border-slate-200 rounded-xl px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500/20" />
-              </div>
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Pago Operador</label>
-                <input value={tabuladorForm.pago_operador} onChange={(e) => setTabuladorForm({ ...tabuladorForm, pago_operador: e.target.value })} type="number" min="0" step="0.01" placeholder="0.00" className="w-full border border-slate-200 rounded-xl px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500/20" required />
-              </div>
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Versión</label>
-                <input value={tabuladorForm.version} onChange={(e) => setTabuladorForm({ ...tabuladorForm, version: e.target.value })} type="number" min="1" step="1" placeholder="1" className="w-full border border-slate-200 rounded-xl px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500/20" />
-              </div>
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-slate-500 uppercase ml-1">Prioridad</label>
-                <input value={tabuladorForm.prioridad} onChange={(e) => setTabuladorForm({ ...tabuladorForm, prioridad: e.target.value })} type="number" step="1" placeholder="0" className="w-full border border-slate-200 rounded-xl px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500/20" />
-              </div>
-              <button className="px-6 py-2 rounded-xl bg-emerald-600 text-white font-bold text-sm hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-600/10">
-                <i className="fas fa-plus mr-2"></i> Crear Tarifa
-              </button>
-            </form>
           </div>
         )}
 
