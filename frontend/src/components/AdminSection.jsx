@@ -246,6 +246,7 @@ function AdminSection() {
   const [tabUploadResult, setTabUploadResult] = useState(null)
   const [tabUploadLoading, setTabUploadLoading] = useState(false)
   const [tabActivating, setTabActivating] = useState(false)
+  const [tabCsvPreview, setTabCsvPreview] = useState(null) // { headers, rows, total, file }
 
   const tabTitle = useMemo(() => {
     switch (tab) {
@@ -503,42 +504,167 @@ function AdminSection() {
 
         {tab === 'tabulador' && (
           <div className="space-y-4">
-            {/* Carga masiva CSV — NUEVO */}
-            <div className="border rounded-lg p-4 bg-amber-50/40 border-amber-200">
-              <h4 className="text-sm font-semibold text-amber-900 mb-3 flex items-center">
-                Cargar tabulador desde CSV <NewBadge />
-              </h4>
-              <form onSubmit={handleUploadTabulador} className="flex flex-wrap gap-2 items-end">
-                <div>
-                  <label className="block text-xs text-gray-500 mb-1">Archivo CSV (columnas: tipo, cruce, origen, destino, pago_operador, prioridad)</label>
-                  <input
-                    type="file" accept=".csv"
-                    onChange={e => { setTabUploadFile(e.target.files[0]); setTabUploadResult(null) }}
-                    className="block text-sm text-gray-700"
-                  />
+            {/* ── Carga masiva CSV ──────────────────────────────────────── */}
+            <div className="rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/50 p-6 transition-colors hover:border-blue-300 hover:bg-blue-50/20">
+              <div className="flex flex-col sm:flex-row items-center gap-5">
+                {/* Icono + texto */}
+                <div className="flex-1 text-center sm:text-left">
+                  <div className="flex items-center justify-center sm:justify-start gap-3 mb-1">
+                    <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
+                      <i className="fas fa-file-csv text-blue-600 text-lg"></i>
+                    </div>
+                    <div>
+                      <p className="font-bold text-slate-800 text-sm">Importar Tabulador desde CSV</p>
+                      <p className="text-xs text-slate-400 mt-0.5">Columnas requeridas: tipo, cruce, origen, destino, pago_operador, prioridad</p>
+                    </div>
+                  </div>
                 </div>
-                <button
-                  disabled={!tabUploadFile || tabUploadLoading}
-                  className="px-4 py-2 rounded bg-amber-600 text-white text-sm disabled:opacity-50"
-                >
-                  {tabUploadLoading ? 'Cargando...' : 'Subir CSV'}
-                </button>
-              </form>
+
+                {/* Botón de selección */}
+                <label className="cursor-pointer">
+                  <input
+                    type="file"
+                    accept=".csv"
+                    className="hidden"
+                    onChange={e => {
+                      const file = e.target.files[0]
+                      if (!file) return
+                      setTabUploadFile(file)
+                      setTabUploadResult(null)
+                      // Leer y parsear CSV para preview
+                      const reader = new FileReader()
+                      reader.onload = ev => {
+                        const lines = ev.target.result.split('\n').filter(l => l.trim())
+                        const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''))
+                        const dataRows = lines.slice(1, 51).map(line =>
+                          line.split(',').map(c => c.trim().replace(/^"|"$/g, ''))
+                        )
+                        setTabCsvPreview({ headers, rows: dataRows, total: lines.length - 1, file })
+                      }
+                      reader.readAsText(file)
+                    }}
+                  />
+                  <span className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-blue-600 text-white font-bold text-sm hover:bg-blue-700 active:scale-95 transition-all shadow-lg shadow-blue-600/20 select-none">
+                    <i className="fas fa-upload"></i>
+                    Seleccionar archivo CSV
+                  </span>
+                </label>
+              </div>
+
+              {/* Resultado de upload previo */}
               {tabUploadResult && (
-                <div className={`mt-3 p-3 rounded text-sm ${tabUploadResult.ok ? 'bg-green-50 border border-green-200 text-green-800' : 'bg-red-50 border border-red-200 text-red-800'}`}>
-                  <p className="font-medium">{tabUploadResult.mensaje || (tabUploadResult.ok ? 'Carga exitosa' : 'Error en carga')}</p>
-                  {tabUploadResult.ok && (
-                    <p className="text-xs mt-1">Filas OK: {tabUploadResult.filas_ok} | Rechazadas: {tabUploadResult.filas_rechazadas}</p>
-                  )}
-                  {tabUploadResult.errores?.length > 0 && (
-                    <ul className="text-xs mt-2 list-disc ml-4">
-                      {tabUploadResult.errores.slice(0, 5).map((e, i) => <li key={i}>{e}</li>)}
-                      {tabUploadResult.errores.length > 5 && <li>...y {tabUploadResult.errores.length - 5} más</li>}
-                    </ul>
-                  )}
+                <div className={`mt-4 p-4 rounded-xl text-sm flex items-start gap-3 ${tabUploadResult.ok ? 'bg-green-50 border border-green-200 text-green-800' : 'bg-red-50 border border-red-200 text-red-800'}`}>
+                  <i className={`fas ${tabUploadResult.ok ? 'fa-check-circle text-green-500' : 'fa-times-circle text-red-500'} mt-0.5`}></i>
+                  <div>
+                    <p className="font-semibold">{tabUploadResult.mensaje || (tabUploadResult.ok ? 'Carga exitosa' : 'Error en carga')}</p>
+                    {tabUploadResult.ok && (
+                      <p className="text-xs mt-1 opacity-80">✓ {tabUploadResult.filas_ok} filas importadas · {tabUploadResult.filas_rechazadas} rechazadas</p>
+                    )}
+                    {tabUploadResult.errores?.length > 0 && (
+                      <ul className="text-xs mt-2 list-disc ml-4 space-y-0.5">
+                        {tabUploadResult.errores.slice(0, 5).map((e, i) => <li key={i}>{e}</li>)}
+                        {tabUploadResult.errores.length > 5 && <li className="opacity-60">...y {tabUploadResult.errores.length - 5} errores más</li>}
+                      </ul>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
+
+            {/* ── Modal de Preview CSV ──────────────────────────────────── */}
+            {tabCsvPreview && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{backdropFilter:'blur(4px)', backgroundColor:'rgba(15,23,42,0.5)'}}>
+                <div className="bg-white rounded-3xl shadow-2xl w-full max-w-5xl max-h-[85vh] flex flex-col overflow-hidden">
+
+                  {/* Header del modal */}
+                  <div className="flex items-center justify-between px-8 py-5 border-b border-slate-100 bg-slate-50 rounded-t-3xl">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center">
+                        <i className="fas fa-table text-blue-600"></i>
+                      </div>
+                      <div>
+                        <p className="font-bold text-slate-900">{tabCsvPreview.file?.name}</p>
+                        <p className="text-xs text-slate-400">{tabCsvPreview.total.toLocaleString()} registros detectados · mostrando primeros 50</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => { setTabCsvPreview(null); setTabUploadFile(null) }}
+                      className="w-9 h-9 rounded-xl bg-slate-200 hover:bg-red-100 hover:text-red-600 flex items-center justify-center transition-colors"
+                    >
+                      <i className="fas fa-times text-sm"></i>
+                    </button>
+                  </div>
+
+                  {/* Tabla preview */}
+                  <div className="overflow-auto flex-1">
+                    <table className="w-full text-xs border-collapse">
+                      <thead className="sticky top-0">
+                        <tr className="bg-slate-900 text-slate-200">
+                          {tabCsvPreview.headers.map((h, i) => (
+                            <th key={i} className="px-4 py-3 text-left font-semibold uppercase tracking-wider whitespace-nowrap">
+                              {h}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {tabCsvPreview.rows.map((row, ri) => (
+                          <tr key={ri} className={ri % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
+                            {row.map((cell, ci) => (
+                              <td key={ci} className="px-4 py-2 text-slate-600 whitespace-nowrap">
+                                {cell}
+                              </td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Footer con botón Subir */}
+                  <div className="flex items-center justify-between px-8 py-5 border-t border-slate-100 bg-slate-50 rounded-b-3xl">
+                    <p className="text-sm text-slate-500">
+                      <i className="fas fa-info-circle mr-1 text-blue-400"></i>
+                      Verifica que los datos sean correctos antes de importar.
+                    </p>
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => { setTabCsvPreview(null); setTabUploadFile(null) }}
+                        className="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-semibold text-sm hover:bg-slate-100 transition-colors"
+                      >
+                        Cancelar
+                      </button>
+                      <button
+                        onClick={async () => {
+                          if (!tabUploadFile || tabUploadLoading) return
+                          setTabUploadLoading(true)
+                          setTabUploadResult(null)
+                          try {
+                            const result = await uploadTabulador(tabUploadFile)
+                            setTabUploadResult({ ok: true, ...result })
+                            setTabUploadFile(null)
+                            setTabCsvPreview(null)
+                            await loadData()
+                          } catch (err) {
+                            setTabUploadResult({ ok: false, mensaje: err.message })
+                            setTabCsvPreview(null)
+                          } finally {
+                            setTabUploadLoading(false)
+                          }
+                        }}
+                        disabled={tabUploadLoading}
+                        className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-blue-600 text-white font-bold text-sm hover:bg-blue-700 disabled:opacity-50 transition-all shadow-lg shadow-blue-600/20"
+                      >
+                        {tabUploadLoading
+                          ? <><i className="fas fa-spinner animate-spin"></i> Importando...</>
+                          : <><i className="fas fa-cloud-upload-alt"></i> Confirmar e Importar</>
+                        }
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Panel de versiones disponibles — NUEVO */}
             {tabVersiones.length > 0 && (
