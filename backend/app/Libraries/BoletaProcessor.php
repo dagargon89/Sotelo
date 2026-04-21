@@ -63,6 +63,14 @@ class BoletaProcessor
                 $origin = strtoupper(trim((string) ($row['Origen'] ?? '')));
                 $dest = strtoupper(trim((string) ($row['Destino'] ?? '')));
                 $status = strtoupper(trim((string) ($row['Estatus flete'] ?? '')));
+
+                // D-001 (RULE_LEDGER): Solo statuses válidos avanzan a nómina.
+                // FACTURADO = viaje cargado completado, COMPLETO/TERMINADO = viaje vacío/PT completado.
+                // EN TRÁNSITO, CANCELADO y cualquier otro status se descartan.
+                $validStatuses = ['FACTURADO', 'COMPLETO', 'TERMINADO'];
+                if ($status !== '' && !in_array($status, $validStatuses, true)) {
+                    continue;
+                }
                 $tipo = strtoupper(trim((string) ($row['Tipo'] ?? '')));
                 $comments = strtoupper(trim((string) ($row['Comentarios'] ?? '')));
 

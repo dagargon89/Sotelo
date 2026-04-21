@@ -70,14 +70,10 @@ export default function BoletaCard({ trip, onUpdate, dieselPrice, unitYields = {
     }, [])
 
 
-    // Recalculate live totals and notify parent (runs on diesel price OR bonus changes)
+    // Recalculate live totals and notify parent (runs on bonus changes)
+    // D-04 fix: Diesel (Litros_A_Pago × precio) NO entra al Total_Pay — política manual-only.
+    // El diesel sigue calculándose en calculateDependentFields solo para visualización informativa.
     const recalcAndNotify = (currentRowsData) => {
-        const tKms = currentRowsData.reduce((sum, r) => sum + (parseFloat(r.Kms) || 0), 0)
-        const tRec = currentRowsData.reduce((sum, r) => sum + (parseFloat(r.Recarga) || 0), 0)
-        const rendPago = unitYields[trip.Unit] || defaultYield
-        const currentDieselPrice = parseFloat(dieselPrice) || 14.85
-        const dieselIncentive = rendPago > 0 ? ((tKms / rendPago) - tRec) * currentDieselPrice : 0
-
         const quimico = bonoQuimico ? 250 : 0
         let bonos = 0
         if (trip.Is_Pacifico) {
@@ -88,7 +84,8 @@ export default function BoletaCard({ trip, onUpdate, dieselPrice, unitYields = {
         }
 
         const pagoCruceVal = parseFloat(trip.Pago_Cruce) || 0
-        const incentivePay = dieselIncentive + quimico + bonos + pagoCruceVal
+        // Diesel excluido del incentivePay (RULE_LEDGER R-008..R-011 — manual-only)
+        const incentivePay = quimico + bonos + pagoCruceVal
         const basePay = parseFloat(trip.Base_Pay) || 0
         const updatedRows = (trip.Rows || []).map((or, i) => ({ ...or, ...currentRowsData[i] }))
 
@@ -100,7 +97,8 @@ export default function BoletaCard({ trip, onUpdate, dieselPrice, unitYields = {
         })
     }
 
-    // React to diesel price changes
+    // React to diesel price changes — actualiza Litros_A_Pago y Diesel_A_Favor (solo visualización).
+    // D-04: El precio del diesel ya NO afecta el Total_Pay (política manual-only).
     React.useEffect(() => {
         const newRowsData = rowsData.map(row => ({
             ...row,
@@ -512,17 +510,11 @@ export default function BoletaCard({ trip, onUpdate, dieselPrice, unitYields = {
                             </span>
                         </div>
                         <div className="flex flex-col items-end">
+                            {/* D-04 fix: Diesel excluido del total — RULE_LEDGER manual-only R-008..R-011 */}
                             <span className="text-[10px] uppercase font-bold text-slate-800 tracking-widest mb-1">BOLETA INCENTIVO TOTAL</span>
                             <span className="text-xl font-mono font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-xl">
                                 {(() => {
-                                    const tKms = rowsData.reduce((sum, r) => sum + (parseFloat(r.Kms) || 0), 0)
-                                    const tRec = rowsData.reduce((sum, r) => sum + (parseFloat(r.Recarga) || 0), 0)
-                                    const rendPago = unitYields[trip.Unit] || defaultYield
-                                    const resLitros = rendPago > 0 ? (tKms / rendPago) - tRec : 0
-                                    const currentDieselPrice = parseFloat(dieselPrice) || 14.85
-                                    const dieselIncentive = resLitros * currentDieselPrice
-
-                                    // Bonos
+                                    // Diesel NO incluido — es captura manual, no auto-cálculo
                                     const quimico = bonoQuimico ? 250 : 0
                                     let bonos = 0
                                     if (trip.Is_Pacifico) {
@@ -533,7 +525,7 @@ export default function BoletaCard({ trip, onUpdate, dieselPrice, unitYields = {
                                     }
 
                                     const pagoCruceVal = parseFloat(trip.Pago_Cruce) || 0
-                                    const total = dieselIncentive + quimico + bonos + pagoCruceVal
+                                    const total = quimico + bonos + pagoCruceVal
                                     return `$${total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
                                 })()}
                             </span>

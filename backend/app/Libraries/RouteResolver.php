@@ -72,6 +72,11 @@ class RouteResolver
         if (strpos($loc, 'EL PASO') !== false || strpos($loc, 'RIO BRAVO') !== false) {
             $norm = 'EL PASO';
         }
+        // D-07 fix: ZARAGOZA es el Puente Internacional Zaragoza-Ysleta, mismo corredor ELP
+        // Coherente con BoletaProcessor.php que ya detecta ZARAGOZA como cruce ELP.
+        if (strpos($loc, 'ZARAGOZA') !== false) {
+            $norm = 'EL PASO';
+        }
         if (strpos($loc, 'CHIH') !== false) {
             $norm = 'CHIHUAHUA';
         }
