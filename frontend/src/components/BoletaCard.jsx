@@ -1,8 +1,37 @@
 import React, { useState } from 'react'
 import { buildApiUrl } from '../api'
 
+// Compact iOS-style Toggle Switch
+const ToggleSwitch = ({ checked, onChange, label, amountLabel }) => (
+    <label className="flex items-center justify-between cursor-pointer group bg-white border border-slate-200 px-3 py-2 rounded-lg hover:border-slate-300 hover:shadow-sm transition-all">
+        <div className="flex flex-col">
+            <span className="text-xs font-bold text-slate-700 group-hover:text-slate-900">{label}</span>
+            {amountLabel && <span className="text-[10px] font-semibold text-emerald-600">{amountLabel}</span>}
+        </div>
+        <div className="relative ml-2">
+            <input type="checkbox" checked={checked} onChange={e => onChange(e.target.checked)} className="peer sr-only" />
+            <div className="w-8 h-4 bg-slate-200 rounded-full peer peer-focus:ring-1 peer-focus:ring-blue-500 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-blue-600"></div>
+        </div>
+    </label>
+);
+
+// Compact Stepper
+const Stepper = ({ value, onChange, label, amountLabel }) => (
+    <div className="flex items-center justify-between bg-white border border-slate-200 px-3 py-2 rounded-lg hover:border-slate-300 hover:shadow-sm transition-all">
+        <div className="flex flex-col">
+            <span className="text-xs font-bold text-slate-700">{label}</span>
+            {amountLabel && <span className="text-[10px] font-semibold text-emerald-600">{amountLabel}</span>}
+        </div>
+        <div className="flex items-center bg-slate-50 border border-slate-200 rounded p-0.5 ml-2">
+            <button onClick={() => onChange(Math.max(0, value - 1))} className="w-5 h-5 flex items-center justify-center text-slate-500 hover:text-slate-900 hover:bg-white rounded transition-colors"><i className="fas fa-minus text-[8px]"></i></button>
+            <span className="w-6 text-center text-xs font-bold text-slate-900">{value}</span>
+            <button onClick={() => onChange(value + 1)} className="w-5 h-5 flex items-center justify-center text-slate-500 hover:text-slate-900 hover:bg-white rounded transition-colors"><i className="fas fa-plus text-[8px]"></i></button>
+        </div>
+    </div>
+);
+
 export default function BoletaCard({ trip, onUpdate, dieselPrice, unitYields = {}, defaultYield = 2.37341 }) {
-    // Universal states (needed even for Boleta format)
+    // Universal states
     const [bonoQuimico, setBonoQuimico] = useState(trip.Manual_Bono_Quimico ?? false)
 
     // Pacifico states
@@ -12,45 +41,30 @@ export default function BoletaCard({ trip, onUpdate, dieselPrice, unitYields = {
     const [estObregon, setEstObregon] = useState(trip.Manual_Pac_Estancia_Obregon ?? 0)
     const [estMochis, setEstMochis] = useState(trip.Manual_Pac_Estancia_Mochis ?? 0)
 
-    // Accordion state - track which rows are expanded
+    // Accordion state
     const [expandedRows, setExpandedRows] = useState(new Set())
 
-    // Editable row data - initialize with trip.Rows values
+    // Editable row data
     const [rowsData, setRowsData] = useState(() => {
-        return (trip.Rows || []).map(row => {
-            const baseData = {
-                Kms: row.Kms || 0,
-                Recarga: row.Recarga || 0,
-                Rendimiento: row.Rendimiento || 0,
-                Peso_Carga: row.Peso_Carga || 0,
-                CVP: row.CVP || '',
-                Pago_Por_Km: row.Pago_Por_Km || 0,
-                Litros_A_Pago: row.Litros_A_Pago || 0,
-                Diesel_A_Favor: row.Diesel_A_Favor || 0
-            }
-            return baseData
-        })
+        return (trip.Rows || []).map(row => ({
+            Kms: row.Kms || 0,
+            Recarga: row.Recarga || 0,
+            Rendimiento: row.Rendimiento || 0,
+            Peso_Carga: row.Peso_Carga || 0,
+            CVP: row.CVP || '',
+            Pago_Por_Km: row.Pago_Por_Km || 0,
+            Litros_A_Pago: row.Litros_A_Pago || 0,
+            Diesel_A_Favor: row.Diesel_A_Favor || 0
+        }))
     })
 
     const calculateDependentFields = (rowData, allRows) => {
-        // Use global dieselPrice instead of hardcoded value
         const currentDieselPrice = parseFloat(dieselPrice) || 14.85
-
         const recarga = parseFloat(rowData.Recarga) || 0
-
-        // Rendimiento Pago (valor de la tabla de la unidad)
         const unitYield = unitYields[trip.Unit] || defaultYield
-
-        // Calcular suma total de KMS de todas las filas (coordenadas)
         const totalKms = (allRows || rowsData).reduce((sum, r) => sum + (parseFloat(r.Kms) || 0), 0)
-
-        // Rendimiento Real: se calcula como Suma Total KMS / Recarga de esta fila
         const rendimientoReal = recarga > 0 ? (totalKms / recarga) : 0
-
-        // Litros Pago = (Sum(KMs coordenadas) / Rendimiento Pago) - Recarga
         const litrosAPago = unitYield > 0 ? (totalKms / unitYield) - recarga : 0
-
-        // Diesel a Favor = Litros Pago × Precio Diesel
         const dieselAFavor = litrosAPago * currentDieselPrice
 
         return {
@@ -60,7 +74,6 @@ export default function BoletaCard({ trip, onUpdate, dieselPrice, unitYields = {
         }
     }
 
-    // Realizar cálculos iniciales después de definir rowsData
     React.useEffect(() => {
         const initialCalculations = rowsData.map(row => ({
             ...row,
@@ -69,10 +82,6 @@ export default function BoletaCard({ trip, onUpdate, dieselPrice, unitYields = {
         setRowsData(initialCalculations)
     }, [])
 
-
-    // Recalculate live totals and notify parent (runs on bonus changes)
-    // D-04 fix: Diesel (Litros_A_Pago × precio) NO entra al Total_Pay — política manual-only.
-    // El diesel sigue calculándose en calculateDependentFields solo para visualización informativa.
     const recalcAndNotify = (currentRowsData) => {
         const quimico = bonoQuimico ? 250 : 0
         let bonos = 0
@@ -84,7 +93,6 @@ export default function BoletaCard({ trip, onUpdate, dieselPrice, unitYields = {
         }
 
         const pagoCruceVal = parseFloat(trip.Pago_Cruce) || 0
-        // Diesel excluido del incentivePay (RULE_LEDGER R-008..R-011 — manual-only)
         const incentivePay = quimico + bonos + pagoCruceVal
         const basePay = parseFloat(trip.Base_Pay) || 0
         const updatedRows = (trip.Rows || []).map((or, i) => ({ ...or, ...currentRowsData[i] }))
@@ -97,8 +105,6 @@ export default function BoletaCard({ trip, onUpdate, dieselPrice, unitYields = {
         })
     }
 
-    // React to diesel price changes — actualiza Litros_A_Pago y Diesel_A_Favor (solo visualización).
-    // D-04: El precio del diesel ya NO afecta el Total_Pay (política manual-only).
     React.useEffect(() => {
         const newRowsData = rowsData.map(row => ({
             ...row,
@@ -108,30 +114,21 @@ export default function BoletaCard({ trip, onUpdate, dieselPrice, unitYields = {
         recalcAndNotify(newRowsData)
     }, [dieselPrice])
 
-    // React to bonus changes
     React.useEffect(() => {
         recalcAndNotify(rowsData)
-    }, [bonoQuimico, bonoSierra, bonoDoble, estObregon, estMochis])
+    }, [bonoQuimico, bonoSierra, bonoDoble, estObregon, estMochis, pacLoaded])
 
     const toggleRow = (index) => {
         const newExpanded = new Set(expandedRows)
-        if (newExpanded.has(index)) {
-            newExpanded.delete(index)
-        } else {
-            newExpanded.add(index)
-        }
+        if (newExpanded.has(index)) newExpanded.delete(index)
+        else newExpanded.add(index)
         setExpandedRows(newExpanded)
     }
 
     const handleRowFieldChange = (rowIndex, field, value) => {
         const newRowsData = [...rowsData]
-        newRowsData[rowIndex] = {
-            ...newRowsData[rowIndex],
-            [field]: value
-        }
-
-        // Recalcular todos los campos dependientes para TODAS las filas
-        // porque el rendimiento depende de la suma total de KMS
+        newRowsData[rowIndex] = { ...newRowsData[rowIndex], [field]: value }
+        
         const updatedRows = newRowsData.map(row => ({
             ...row,
             ...calculateDependentFields(row, newRowsData)
@@ -147,7 +144,6 @@ export default function BoletaCard({ trip, onUpdate, dieselPrice, unitYields = {
     }
 
     const handleSave = async () => {
-        // Merge current rowsData back into trip.Rows so backend receives updated values
         const updatedRows = (trip.Rows || []).map((originalRow, i) => ({
             ...originalRow,
             ...rowsData[i]
@@ -181,433 +177,255 @@ export default function BoletaCard({ trip, onUpdate, dieselPrice, unitYields = {
 
     const rows = trip.Rows || []
     const initials = trip.Driver ? trip.Driver.substring(0, 2).toUpperCase() : 'DR'
+    
+    const getFactura = (row) => row.Factura || row.factura || row.Invoice || row.invoice || row.Folio_Liquidacion || row.folio_liquidacion || row.bill || row.Bill || ''
+    const getCoordenada = (row) => row.Coordenada || row.coordenada || row.Coordinate || row.coordinate || ''
 
-    // Helper function to get invoice number with multiple possible field names
-    const getFactura = (row) => {
-        // Try different possible field names
-        return row.Factura ||
-            row.factura ||
-            row.Invoice ||
-            row.invoice ||
-            row.Folio_Liquidacion ||
-            row.folio_liquidacion ||
-            row.bill ||
-            row.Bill ||
-            ''
+    // Calculate dynamic totals for display
+    const totalKmsBoleta = rowsData.reduce((sum, r) => sum + (parseFloat(r.Kms) || 0), 0)
+    const totalRecarga = rowsData.reduce((sum, r) => sum + (parseFloat(r.Recarga) || 0), 0)
+    const rendReal = totalRecarga > 0 ? (totalKmsBoleta / totalRecarga).toFixed(2) : '—'
+    const rendPago = unitYields[trip.Unit] || defaultYield
+    const litrosPago = rendPago > 0 ? (totalKmsBoleta / rendPago) - totalRecarga : 0
+    const totalDiésel = litrosPago * (parseFloat(dieselPrice) || 14.85)
+
+    const quimicoVal = bonoQuimico ? 250 : 0
+    let pacificoBonosVal = 0
+    if (trip.Is_Pacifico) {
+        if (bonoSierra) pacificoBonosVal += 500
+        if (bonoDoble) pacificoBonosVal += 1726
+        pacificoBonosVal += (parseInt(estObregon) || 0) * 600
+        pacificoBonosVal += (parseInt(estMochis) || 0) * 300
     }
-
-    // Helper function to get coordenada
-    const getCoordenada = (row) => {
-        return row.Coordenada ||
-            row.coordenada ||
-            row.Coordinate ||
-            row.coordinate ||
-            ''
-    }
-
-    // Debug: Log rows data to check what we're receiving
-    React.useEffect(() => {
-        if (rows.length > 0 && trip.Boleta === 48531) {
-            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-            console.log(`🔍 DEBUG Boleta ${trip.Boleta}`)
-            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-            console.log(`📦 Full Trip Object:`, trip)
-            console.log(`📋 Rows Array (${rows.length} rows):`, rows)
-            console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-            rows.forEach((row, idx) => {
-                console.log(`📄 Row ${idx}:`)
-                console.log('   All keys:', Object.keys(row))
-                console.log('   Full object:', row)
-                console.log('   Factura attempts:', {
-                    'row.Factura': row.Factura,
-                    'row.factura': row.factura,
-                    'row.Invoice': row.Invoice,
-                    'row.Folio_Liquidacion': row.Folio_Liquidacion,
-                    'getFactura()': getFactura(row)
-                })
-                console.log('   Coordenada attempts:', {
-                    'row.Coordenada': row.Coordenada,
-                    'row.coordenada': row.coordenada,
-                    'getCoordenada()': getCoordenada(row)
-                })
-                console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━')
-            })
-        }
-    }, [trip.Boleta, rows])
+    const pagoCruceVal = parseFloat(trip.Pago_Cruce) || 0
 
     return (
-        <div className="glass-panel subtle-shadow rounded-3xl overflow-hidden mb-8 transition-all hover:shadow-lg">
-
-            {/* ── Header: Driver + Boleta + Status ── */}
-            <div className="px-8 py-5 flex flex-wrap justify-between items-center border-b border-gray-100/50">
-                <div className="flex items-center gap-5">
-                    {/* Avatar */}
-                    <div className="w-12 h-12 rounded-2xl bg-gray-100 flex items-center justify-center text-gray-700 font-semibold text-lg border border-gray-200 flex-shrink-0">
+        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden mb-6 shadow-sm">
+            
+            {/* ── 1. Header (Compact) ── */}
+            <div className="px-4 py-3 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-slate-900 text-white flex items-center justify-center font-bold text-sm shadow-inner flex-shrink-0">
                         {initials}
                     </div>
                     <div>
-                        <h2 className="text-[19px] font-semibold tracking-tight text-gray-900">{trip.Driver}</h2>
-                        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1">
-                            {/* Boleta, Unit and Yield badges */}
-                            <div className="flex gap-1.5">
-                                <span className="inline-flex items-center gap-1.5 bg-slate-800 text-white text-[12px] font-semibold px-3 py-1 rounded-lg tracking-wide">
-                                    Boleta {trip.Boleta}
-                                </span>
-                                <span className="inline-flex items-center gap-1.5 bg-blue-600 text-white text-[12px] font-semibold px-3 py-1 rounded-lg tracking-wide">
-                                    Unidad {trip.Unit}
-                                </span>
-                                <span className="inline-flex items-center gap-1.5 bg-emerald-600 text-white text-[12px] font-semibold px-3 py-1 rounded-lg tracking-wide">
-                                    Rend. Pago {unitYields[trip.Unit] || defaultYield}
-                                </span>
-                                {/* B-04: Alerta de km odómetro — alguna pierna no tiene ruta en el tabulador */}
-                                {trip.Has_Km_Fallback && (
-                                    <span
-                                        className="inline-flex items-center gap-1.5 bg-amber-500 text-white text-[12px] font-semibold px-3 py-1 rounded-lg tracking-wide animate-pulse"
-                                        title="Una o más piernas no tienen ruta en el tabulador maestro. Los km fueron tomados del odómetro del CSV. Revise manualmente."
-                                    >
-                                        ⚠ KM Odómetro
-                                    </span>
-                                )}
-                            </div>
-
-                            <span className="text-[13px] text-gray-500">{trip.Start_Date || 'Fecha N/A'}</span>
+                        <h2 className="text-[15px] font-bold tracking-tight text-slate-900 leading-tight">{trip.Driver}</h2>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                            <span className="inline-flex items-center gap-1 bg-slate-200 text-slate-700 text-[10px] font-bold uppercase px-1.5 py-0.5 rounded">
+                                #{trip.Boleta}
+                            </span>
+                            <span className="inline-flex items-center gap-1 bg-blue-100 text-blue-700 text-[10px] font-bold uppercase px-1.5 py-0.5 rounded">
+                                U-{trip.Unit}
+                            </span>
+                            <span className="text-[10px] text-slate-500 font-medium">
+                                {trip.Start_Date || 'N/A'}
+                            </span>
                         </div>
                     </div>
                 </div>
 
-                {/* Status */}
-                <div className="flex items-center gap-2 mt-4 sm:mt-0">
-                    <label className="flex items-center gap-3 cursor-pointer group mr-4">
-                        <span className="text-[13px] font-medium text-gray-700 group-hover:text-gray-900">Aprobado</span>
-                        <input
-                            type="checkbox"
-                            checked={trip.Status === 'APPROVED'}
-                            onChange={toggleStatus}
-                            className="w-4 h-4 rounded border-gray-300 text-green-600 focus:ring-green-500 transition-colors cursor-pointer"
-                        />
-                    </label>
+                <div className="flex items-center gap-3">
                     {trip.Status === 'APPROVED' ? (
-                        <>
-                            <i className="fas fa-check-circle text-green-500"></i>
-                            <span className="text-[13px] font-medium text-green-700">Aprobado</span>
-                        </>
+                        <div className="bg-emerald-100 text-emerald-700 px-2.5 py-1 rounded text-xs font-bold flex items-center gap-1">
+                            <i className="fas fa-check-circle"></i> Aprobado
+                        </div>
                     ) : trip.Status === 'NEEDS_INPUT' ? (
-                        <>
-                            <span className="relative flex h-2.5 w-2.5">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-orange-500"></span>
-                            </span>
-                            <span className="text-[13px] font-medium text-orange-700">Falta Captura</span>
-                        </>
+                        <div className="bg-amber-100 text-amber-700 px-2.5 py-1 rounded text-xs font-bold flex items-center gap-1">
+                            <i className="fas fa-exclamation-circle"></i> Captura
+                        </div>
                     ) : (
-                        <>
-                            <span className="relative flex h-2.5 w-2.5">
-                                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-                                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500"></span>
-                            </span>
-                            <span className="text-[13px] font-medium text-gray-700">Pendiente</span>
-                        </>
+                        <div className="bg-slate-100 text-slate-600 px-2.5 py-1 rounded text-xs font-bold flex items-center gap-1">
+                            <i className="fas fa-clock"></i> Pendiente
+                        </div>
                     )}
+                    
+                    <div className="border-l border-slate-200 pl-3">
+                        <label className="flex items-center gap-1.5 cursor-pointer group">
+                            <div className="relative flex items-center">
+                                <input type="checkbox" checked={trip.Status === 'APPROVED'} onChange={toggleStatus} className="peer sr-only" />
+                                <div className="w-7 h-4 bg-slate-200 rounded-full peer peer-focus:ring-1 peer-focus:ring-emerald-500 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-emerald-500"></div>
+                            </div>
+                        </label>
+                    </div>
                 </div>
             </div>
 
-            {/* ── Boleta Rows Accordion ── */}
+            {/* ── 2. Finance & KPI Panel (Compact) ── */}
+            <div className="px-4 py-3 border-b border-slate-100 bg-white">
+                <div className="flex flex-col md:flex-row gap-4 items-center">
+                    
+                    {/* Financial Summary */}
+                    <div className="flex-1 flex flex-wrap md:flex-nowrap gap-2 w-full">
+                        <div className="flex-1 bg-slate-50 border border-slate-100 rounded-lg p-2.5 flex flex-col justify-center min-w-[100px]">
+                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">Base</span>
+                            <span className="text-sm font-bold text-slate-800 leading-none">${trip.Base_Pay?.toFixed(2) || '0.00'}</span>
+                        </div>
+                        <div className="flex-1 bg-indigo-50 border border-indigo-100 rounded-lg p-2.5 flex flex-col justify-center min-w-[100px]">
+                            <span className="text-[9px] font-bold text-indigo-400 uppercase tracking-widest leading-none mb-1">Cruce</span>
+                            <span className="text-sm font-bold text-indigo-800 leading-none">+ ${(trip.Pago_Cruce || 0).toFixed(2)}</span>
+                        </div>
+                        <div className="flex-1 bg-blue-50 border border-blue-100 rounded-lg p-2.5 flex flex-col justify-center min-w-[100px]">
+                            <span className="text-[9px] font-bold text-blue-400 uppercase tracking-widest leading-none mb-1">Incentivos</span>
+                            <span className="text-sm font-bold text-blue-800 leading-none">+ ${(quimicoVal + pacificoBonosVal).toFixed(2)}</span>
+                        </div>
+                        <div className="flex-1 bg-slate-900 rounded-lg p-2.5 flex flex-col justify-center min-w-[100px]">
+                            <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest leading-none mb-1">Total</span>
+                            <span className="text-base font-bold text-white leading-none">${trip.Total_Pay?.toFixed(2) || '0.00'}</span>
+                        </div>
+                    </div>
+
+                    {/* Operational KPIs */}
+                    <div className="md:w-56 flex justify-between gap-4 border-t md:border-t-0 md:border-l border-slate-100 pt-3 md:pt-0 md:pl-4 w-full">
+                        <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-2">
+                                <span className="text-[10px] font-bold text-slate-400 w-8">KMS</span>
+                                <span className="text-xs font-mono font-bold text-slate-800">{totalKmsBoleta.toFixed(1)}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <span className="text-[10px] font-bold text-slate-400 w-8">REND</span>
+                                <span className="text-xs font-mono font-bold text-slate-800">{rendReal}</span>
+                            </div>
+                        </div>
+                        <div className="flex flex-col justify-center text-right bg-slate-50 rounded p-1.5 border border-slate-100">
+                            <span className="text-[9px] font-bold text-slate-500 uppercase">Diésel Favor</span>
+                            <span className={`text-sm font-mono font-bold ${totalDiésel > 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                                ${totalDiésel.toFixed(2)}
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Manual Bonuses Toggles */}
+                <div className="mt-3 pt-3 border-t border-slate-100">
+                    <div className="flex flex-wrap gap-2">
+                        <ToggleSwitch checked={bonoQuimico} onChange={setBonoQuimico} label="Químico" amountLabel="+$250" />
+                        
+                        {trip.Is_Pacifico && (
+                            <>
+                                <ToggleSwitch checked={bonoSierra} onChange={setBonoSierra} label="Sierra" amountLabel="+$500" />
+                                <ToggleSwitch checked={bonoDoble} onChange={setBonoDoble} label="Doble" amountLabel="+$1,726" />
+                                <Stepper value={estObregon} onChange={setEstObregon} label="Obregón" amountLabel="+$600/cu" />
+                                <Stepper value={estMochis} onChange={setEstMochis} label="Mochis" amountLabel="+$300/cu" />
+                            </>
+                        )}
+                    </div>
+                </div>
+            </div>
+
+            {/* ── 3. Legs/Rows Table (Compact) ── */}
             {rows.length > 0 && (
-                <div className="border-b border-gray-100/50">
-                    <table className="w-full text-left border-collapse">
-                        <thead>
-                            <tr className="bg-slate-800 text-white">
-                                <th className="px-4 py-3 text-[12px] font-semibold uppercase tracking-wider w-[14%]">Factura</th>
-                                <th className="px-4 py-3 text-[12px] font-semibold uppercase tracking-wider w-[12%]">Coordenada</th>
-                                <th className="px-4 py-3 text-[12px] font-semibold uppercase tracking-wider w-[16%]">Fecha Salida</th>
-                                <th className="px-4 py-3 text-[12px] font-semibold uppercase tracking-wider w-[16%]">Fecha Llegada</th>
-                                <th className="px-4 py-3 text-[12px] font-semibold uppercase tracking-wider w-[18%]">Origen</th>
-                                <th className="px-4 py-3 text-[12px] font-semibold uppercase tracking-wider w-[18%]">Destino</th>
-                                <th className="px-4 py-3 text-[12px] font-semibold uppercase tracking-wider text-center w-[6%]">
-                                    <i className="fas fa-chevron-down"></i>
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {rows.map((row, i) => {
-                                const isExpanded = expandedRows.has(i)
-                                return (
-                                    <React.Fragment key={i}>
-                                        {/* Main Row - Always Visible */}
-                                        <tr
-                                            className={`cursor-pointer ${i % 2 === 0 ? 'bg-white' : 'bg-gray-50/60'} hover:bg-blue-50/40 transition-colors border-b border-gray-100`}
-                                            onClick={() => toggleRow(i)}
-                                        >
-                                            <td className="px-4 py-3 text-gray-700 font-mono text-[14px]">
-                                                {getFactura(row) || <span className="text-gray-400 italic">Sin factura</span>}
-                                            </td>
-                                            <td className="px-4 py-3 text-gray-700 font-mono text-[14px]">
-                                                {getCoordenada(row) || '—'}
-                                            </td>
-                                            <td className="px-4 py-3 text-gray-600 text-[14px]">{row.Fecha_Salida || '—'}</td>
-                                            <td className="px-4 py-3 text-gray-600 text-[14px]">{row.Fecha_Llegada || '—'}</td>
-                                            <td className="px-4 py-3 text-gray-800 font-medium text-[14px]" title={row.Origen}>
-                                                <div className="flex items-center gap-1">
-                                                    <span className="truncate">{row.Origen || '—'}</span>
-                                                    {/* B-04: Indicar si los km de esta pierna son del odómetro */}
-                                                    {row.Km_Source === 'FALLBACK' && (
-                                                        <span
-                                                            className="flex-shrink-0 text-[10px] font-bold text-amber-600 bg-amber-100 px-1 rounded"
-                                                            title="Km tomados del odómetro del CSV, no del tabulador maestro"
-                                                        >
-                                                            ⚠KM
-                                                        </span>
-                                                    )}
-                                                </div>
-                                            </td>
-                                            <td className="px-4 py-3 text-gray-800 font-medium text-[14px]" title={row.Destino}>
-                                                <div className="truncate">{row.Destino || '—'}</div>
-                                            </td>
-                                            <td className="px-4 py-3 text-center">
-                                                <i className={`fas fa-chevron-${isExpanded ? 'up' : 'down'} text-gray-500 text-[14px] transition-transform duration-200`}></i>
-                                            </td>
-                                        </tr>
+                <div className="bg-slate-50 border-t border-slate-200">
+                    <div className="px-4 py-2 flex items-center justify-between">
+                        <h3 className="text-xs font-bold text-slate-700 flex items-center gap-1.5">
+                            <i className="fas fa-route text-slate-400"></i> Desglose de Trayectos
+                        </h3>
+                        {trip.Has_Km_Fallback && (
+                            <span className="text-[9px] font-bold uppercase tracking-wider bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded flex items-center gap-1 animate-pulse">
+                                <i className="fas fa-exclamation-triangle"></i> Fallback KM
+                            </span>
+                        )}
+                    </div>
 
-                                        {/* Expanded Content - Additional Row */}
-                                        {isExpanded && (
-                                            <tr className={`${i % 2 === 0 ? 'bg-blue-50/30' : 'bg-blue-50/50'} border-b border-blue-200`}>
-                                                <td colSpan="7" className="px-0 py-0">
-                                                    <table className="w-full">
-                                                        <thead>
-                                                            <tr className="bg-slate-700 text-white">
-                                                                <th className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wider text-right">KMS ✎</th>
-                                                                <th className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wider bg-yellow-400 text-slate-900 text-right">Recarga ✎</th>
-                                                                <th className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wider bg-blue-400 text-slate-900 text-right">Rendimiento 🔢</th>
-                                                                <th className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wider bg-yellow-400 text-slate-900 text-right">Peso Carga ✎</th>
-                                                                <th className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wider text-center">Tipo ✎</th>
-                                                                <th className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wider">Remolque</th>
-                                                                <th className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wider">Cliente</th>
-                                                                <th className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wider bg-yellow-400 text-slate-900 text-right">Pago/KM ✎</th>
-                                                                <th className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wider bg-green-400 text-slate-900 text-right">Litros Pago 🔢</th>
-                                                                <th className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wider bg-green-400 text-slate-900 text-right">Diesel Favor 🔢</th>
-                                                            </tr>
-                                                        </thead>
-
-                                                        <tbody>
-                                                            <tr className="bg-white/80">
-                                                                {/* KMS - Editable */}
-                                                                <td className="px-4 py-2 bg-white">
-                                                                    <input
-                                                                        type="number"
-                                                                        value={rowsData[i]?.Kms || ''}
-                                                                        onChange={(e) => handleRowFieldChange(i, 'Kms', parseFloat(e.target.value) || 0)}
-                                                                        className="w-full px-2 py-1 text-[13px] text-right font-mono border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                                                                    />
-                                                                </td>
-                                                                {/* Recarga - Editable */}
-                                                                <td className="px-4 py-2 bg-yellow-50/60">
-                                                                    <input
-                                                                        type="number"
-                                                                        step="0.01"
-                                                                        value={rowsData[i]?.Recarga || ''}
-                                                                        onChange={(e) => handleRowFieldChange(i, 'Recarga', parseFloat(e.target.value) || 0)}
-                                                                        className="w-full px-2 py-1 text-[13px] text-right font-mono border border-yellow-300 rounded focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
-                                                                    />
-                                                                </td>
-                                                                {/* Rendimiento - Calculado automáticamente (KMS / Recarga) */}
-                                                                <td className="px-4 py-3 bg-blue-50/60">
-                                                                    <div className="text-[13px] text-right font-mono font-semibold text-gray-900">
-                                                                        {rowsData[i]?.Rendimiento?.toFixed(2) || '0.00'}
-                                                                    </div>
-                                                                </td>
-                                                                {/* Peso de Carga - Editable */}
-                                                                <td className="px-4 py-2 bg-yellow-50/60">
-                                                                    <input
-                                                                        type="number"
-                                                                        value={rowsData[i]?.Peso_Carga || ''}
-                                                                        onChange={(e) => handleRowFieldChange(i, 'Peso_Carga', parseFloat(e.target.value) || 0)}
-                                                                        className="w-full px-2 py-1 text-[13px] text-right font-mono border border-yellow-300 rounded focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
-                                                                    />
-                                                                </td>
-                                                                {/* Tipo C/V/PT - Editable Select */}
-                                                                <td className="px-4 py-2 text-center">
-                                                                    <select
-                                                                        value={rowsData[i]?.CVP || ''}
-                                                                        onChange={(e) => handleRowFieldChange(i, 'CVP', e.target.value)}
-                                                                        className={`px-2 py-1 text-[11px] font-bold rounded border-2 focus:ring-2 focus:ring-blue-500 ${rowsData[i]?.CVP === 'C' ? 'bg-green-100 text-green-700 border-green-300' :
-                                                                                rowsData[i]?.CVP === 'PT' ? 'bg-blue-100 text-blue-700 border-blue-300' :
-                                                                                    'bg-gray-100 text-gray-600 border-gray-300'
-                                                                            }`}
-                                                                    >
-                                                                        <option value="">—</option>
-                                                                        <option value="C">C</option>
-                                                                        <option value="V">V</option>
-                                                                        <option value="PT">PT</option>
-                                                                    </select>
-                                                                </td>
-                                                                {/* Remolque - Read only */}
-                                                                <td className="px-4 py-3 text-gray-600 text-[13px]">{row.Remolque || '—'}</td>
-                                                                {/* Cliente - Read only */}
-                                                                <td className="px-4 py-3 text-gray-800 text-[13px]" title={row.Cliente}>
-                                                                    <div className="truncate max-w-[150px]">{row.Cliente || '—'}</div>
-                                                                </td>
-                                                                {/* Pago por KM - Editable */}
-                                                                <td className="px-4 py-2 bg-yellow-50/60">
-                                                                    <input
-                                                                        type="number"
-                                                                        step="0.01"
-                                                                        value={rowsData[i]?.Pago_Por_Km || ''}
-                                                                        onChange={(e) => handleRowFieldChange(i, 'Pago_Por_Km', parseFloat(e.target.value) || 0)}
-                                                                        className="w-full px-2 py-1 text-[13px] text-right font-mono border border-yellow-300 rounded focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
-                                                                    />
-                                                                </td>
-                                                                {/* Litros a Pago - Calculado automáticamente */}
-                                                                <td className="px-4 py-3 bg-green-50/60">
-                                                                    <div className="text-[13px] text-right font-mono font-semibold text-gray-900">
-                                                                        {rowsData[i]?.Litros_A_Pago?.toFixed(2) || '0.00'}
-                                                                    </div>
-                                                                </td>
-                                                                {/* Diesel a Favor - Calculado automáticamente */}
-                                                                <td className="px-4 py-3 bg-green-50/60">
-                                                                    <div className={`text-[13px] text-right font-mono font-bold ${(rowsData[i]?.Diesel_A_Favor || 0) > 0
-                                                                            ? 'text-green-700'
-                                                                            : 'text-red-600'
-                                                                        }`}>
-                                                                        ${rowsData[i]?.Diesel_A_Favor?.toFixed(2) || '0.00'}
-                                                                    </div>
-                                                                </td>
-                                                            </tr>
-                                                        </tbody>
-                                                    </table>
+                    <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse">
+                            <thead>
+                                <tr className="border-y border-slate-200 bg-slate-100">
+                                    <th className="px-4 py-1.5 text-[9px] font-bold text-slate-500 uppercase w-10">#</th>
+                                    <th className="px-4 py-1.5 text-[9px] font-bold text-slate-500 uppercase">Factura / Ruta</th>
+                                    <th className="px-4 py-1.5 text-[9px] font-bold text-slate-500 uppercase text-right">KMs</th>
+                                    <th className="px-4 py-1.5 text-[9px] font-bold text-slate-500 uppercase text-center w-12">Detalle</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100 bg-white">
+                                {rows.map((row, i) => {
+                                    const isExpanded = expandedRows.has(i);
+                                    return (
+                                        <React.Fragment key={i}>
+                                            <tr 
+                                                className={`cursor-pointer transition-colors ${isExpanded ? 'bg-blue-50/40' : 'hover:bg-slate-50'}`}
+                                                onClick={() => toggleRow(i)}
+                                            >
+                                                <td className="px-4 py-2 font-mono text-xs text-slate-400 font-bold">{i + 1}</td>
+                                                <td className="px-4 py-2">
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="font-mono text-xs font-bold text-slate-700 w-16 truncate">{getFactura(row) || 'N/A'}</span>
+                                                        <div className="flex items-center gap-1 text-xs">
+                                                            <span className="font-bold text-slate-800">{row.Origen || '—'}</span>
+                                                            <i className="fas fa-arrow-right text-[8px] text-slate-300"></i>
+                                                            <span className="font-bold text-slate-800">{row.Destino || '—'}</span>
+                                                            {row.Km_Source === 'FALLBACK' && (
+                                                                <span className="text-[8px] text-amber-600 bg-amber-100 px-1 rounded ml-1">⚠ KM</span>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td className="px-4 py-2 text-right font-mono text-xs font-bold text-slate-700">
+                                                    {rowsData[i]?.Kms || row.Kms || 0}
+                                                </td>
+                                                <td className="px-4 py-2 text-center">
+                                                    <button className={`w-6 h-6 rounded border flex items-center justify-center transition-all ${isExpanded ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-slate-400 border-slate-200'}`}>
+                                                        <i className={`fas fa-chevron-${isExpanded ? 'up' : 'down'} text-[9px]`}></i>
+                                                    </button>
                                                 </td>
                                             </tr>
-                                        )}
-                                    </React.Fragment>
-                                )
-                            })}
-                        </tbody>
-                    </table>
 
-                    {/* overall boleta summary at bottom of table */}
-                    <div className="bg-slate-50/80 px-8 py-4 border-t border-gray-100 flex flex-wrap justify-end items-center gap-x-12 gap-y-2">
-                        <div className="flex flex-col items-end">
-                            <span className="text-[10px] uppercase font-bold text-gray-400 tracking-widest mb-1">TOTAL KMS BOLETA</span>
-                            <span className="text-sm font-mono font-bold text-gray-700">
-                                {rowsData.reduce((sum, r) => sum + (parseFloat(r.Kms) || 0), 0).toFixed(1)}
-                            </span>
-                        </div>
-                        <div className="flex flex-col items-end">
-                            <span className="text-[10px] uppercase font-bold text-gray-400 tracking-widest mb-1">TOTAL RECARGA</span>
-                            <span className="text-sm font-mono font-bold text-gray-700">
-                                {rowsData.reduce((sum, r) => sum + (parseFloat(r.Recarga) || 0), 0).toFixed(3)}
-                            </span>
-                        </div>
-                        <div className="flex flex-col items-end">
-                            <span className="text-[10px] uppercase font-bold text-blue-500 tracking-widest mb-1">REND. REAL (BOLETA)</span>
-                            <span className="text-sm font-mono font-bold text-gray-700">
-                                {(() => {
-                                    const tKms = rowsData.reduce((sum, r) => sum + (parseFloat(r.Kms) || 0), 0)
-                                    const tRec = rowsData.reduce((sum, r) => sum + (parseFloat(r.Recarga) || 0), 0)
-                                    return tRec > 0 ? (tKms / tRec).toFixed(3) : '—'
-                                })()}
-                            </span>
-                        </div>
-                        {trip.Pago_Cruce !== null && trip.Pago_Cruce > 0 && (
-                            <div className="flex flex-col items-end border-l border-gray-200 pl-4 ml-2">
-                                <span className="text-[10px] uppercase font-bold text-indigo-500 tracking-widest mb-1 flex items-center gap-1">
-                                    <i className="fas fa-money-bill-wave"></i> TARIFA TABULADOR
-                                </span>
-                                <span className="text-lg font-mono font-bold text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded-lg">
-                                    ${(trip.Pago_Cruce || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                                </span>
-                            </div>
-                        )}
-                        <div className="flex flex-col items-end border-l border-gray-200 pl-4 ml-2">
-                            <span className="text-[10px] uppercase font-bold text-green-600 tracking-widest mb-1 underline decoration-green-300">LITROS PAGO (BOLETA)</span>
-                            <span className="text-lg font-mono font-bold text-slate-900">
-                                {(() => {
-                                    const tKms = rowsData.reduce((sum, r) => sum + (parseFloat(r.Kms) || 0), 0)
-                                    const tRec = rowsData.reduce((sum, r) => sum + (parseFloat(r.Recarga) || 0), 0)
-                                    const rendPago = unitYields[trip.Unit] || defaultYield
-                                    const res = rendPago > 0 ? (tKms / rendPago) - tRec : 0
-                                    return res.toFixed(2)
-                                })()}
-                            </span>
-                        </div>
-                        <div className="flex flex-col items-end">
-                            {/* D-04 fix: Diesel excluido del total — RULE_LEDGER manual-only R-008..R-011 */}
-                            <span className="text-[10px] uppercase font-bold text-slate-800 tracking-widest mb-1">BOLETA INCENTIVO TOTAL</span>
-                            <span className="text-xl font-mono font-bold text-emerald-600 bg-emerald-50 px-3 py-1 rounded-xl">
-                                {(() => {
-                                    // Diesel NO incluido — es captura manual, no auto-cálculo
-                                    const quimico = bonoQuimico ? 250 : 0
-                                    let bonos = 0
-                                    if (trip.Is_Pacifico) {
-                                        if (bonoSierra) bonos += 500
-                                        if (bonoDoble) bonos += 1726
-                                        bonos += (parseInt(estObregon) || 0) * 600
-                                        bonos += (parseInt(estMochis) || 0) * 300
-                                    }
-
-                                    const pagoCruceVal = parseFloat(trip.Pago_Cruce) || 0
-                                    const total = quimico + bonos + pagoCruceVal
-                                    return `$${total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                                })()}
-                            </span>
-                        </div>
+                                            {/* ── Sub-Grid Panel ── */}
+                                            {isExpanded && (
+                                                <tr>
+                                                    <td colSpan="4" className="p-0 border-b border-blue-100">
+                                                        <div className="bg-blue-50/30 px-4 py-3 shadow-inner relative">
+                                                            <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-500"></div>
+                                                            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3">
+                                                                <div className="space-y-1">
+                                                                    <label className="text-[9px] font-bold text-slate-500 uppercase ml-0.5">KMS</label>
+                                                                    <input type="number" value={rowsData[i]?.Kms || ''} onChange={(e) => handleRowFieldChange(i, 'Kms', parseFloat(e.target.value) || 0)} className="w-full bg-white border border-slate-200 rounded px-2 py-1 text-xs font-mono shadow-sm focus:ring-1 focus:ring-blue-500 outline-none" />
+                                                                </div>
+                                                                <div className="space-y-1">
+                                                                    <label className="text-[9px] font-bold text-amber-600 uppercase ml-0.5">Recarga</label>
+                                                                    <input type="number" step="0.01" value={rowsData[i]?.Recarga || ''} onChange={(e) => handleRowFieldChange(i, 'Recarga', parseFloat(e.target.value) || 0)} className="w-full bg-amber-50 border border-amber-200 rounded px-2 py-1 text-xs font-mono shadow-sm focus:ring-1 focus:ring-amber-500 outline-none" />
+                                                                </div>
+                                                                <div className="space-y-1">
+                                                                    <label className="text-[9px] font-bold text-amber-600 uppercase ml-0.5">Peso Carga</label>
+                                                                    <input type="number" value={rowsData[i]?.Peso_Carga || ''} onChange={(e) => handleRowFieldChange(i, 'Peso_Carga', parseFloat(e.target.value) || 0)} className="w-full bg-amber-50 border border-amber-200 rounded px-2 py-1 text-xs font-mono shadow-sm focus:ring-1 focus:ring-amber-500 outline-none" />
+                                                                </div>
+                                                                <div className="space-y-1">
+                                                                    <label className="text-[9px] font-bold text-slate-500 uppercase ml-0.5">Tipo</label>
+                                                                    <select value={rowsData[i]?.CVP || ''} onChange={(e) => handleRowFieldChange(i, 'CVP', e.target.value)} className="w-full bg-white border border-slate-200 rounded px-2 py-1 text-xs font-bold shadow-sm focus:ring-1 focus:ring-blue-500 outline-none">
+                                                                        <option value="">—</option>
+                                                                        <option value="C">C (Cargado)</option>
+                                                                        <option value="V">V (Vacío)</option>
+                                                                        <option value="PT">PT</option>
+                                                                    </select>
+                                                                </div>
+                                                                <div className="space-y-1 bg-white/50 border border-slate-200/50 rounded px-2 py-1 flex flex-col justify-center">
+                                                                    <span className="text-[9px] font-bold text-slate-400 uppercase">Litros Pago</span>
+                                                                    <span className="font-mono font-bold text-slate-800 text-xs">{rowsData[i]?.Litros_A_Pago?.toFixed(2) || '0.00'}</span>
+                                                                </div>
+                                                                <div className="space-y-1 bg-emerald-50/50 border border-emerald-100 rounded px-2 py-1 flex flex-col justify-center">
+                                                                    <span className="text-[9px] font-bold text-emerald-600 uppercase">Diesel a Favor</span>
+                                                                    <span className="font-mono font-bold text-emerald-800 text-xs">${rowsData[i]?.Diesel_A_Favor?.toFixed(2) || '0.00'}</span>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            )}
+                                        </React.Fragment>
+                                    )
+                                })}
+                            </tbody>
+                        </table>
                     </div>
                 </div>
-
             )}
 
-            {/* ── Footer: Bonos / Estancia + Save ── */}
-            <div className="p-6 md:px-8 md:py-6 flex flex-col md:flex-row justify-between items-center gap-6 bg-white/40">
-                <div className="flex flex-wrap items-center gap-x-8 gap-y-4 w-full md:w-auto">
-
-                    {/* Bono Quimico - Universal, visible on all cards */}
-                    <label className="flex items-center gap-3 cursor-pointer group" title="Agrega $250 al total del viaje">
-                        <div className="relative flex items-center">
-                            <input type="checkbox" checked={bonoQuimico} onChange={e => setBonoQuimico(e.target.checked)} className="peer sr-only" />
-                            <div className="w-10 h-6 bg-gray-200 rounded-full peer peer-focus:ring-2 peer-focus:ring-gray-900 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gray-900"></div>
-                        </div>
-                        <span className="text-[13px] font-medium text-gray-700 group-hover:text-gray-900">Aplica Químico <span className="text-gray-400 font-normal">(+$250)</span></span>
-                    </label>
-
-                    {/* Pacific Options - Only if Is_Pacifico */}
-                    {trip.Is_Pacifico && (
-                        <>
-                            <div className="w-px h-6 bg-gray-200 hidden lg:block"></div>
-                            <label className="flex items-center gap-3 cursor-pointer group">
-                                <input type="checkbox" checked={pacLoaded} onChange={e => setPacLoaded(e.target.checked)} className="w-4 h-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900 transition-colors cursor-pointer" />
-                                <span className="text-[13px] font-medium text-gray-700 group-hover:text-gray-900">Viaje Cargado</span>
-                            </label>
-                            <label className="flex items-center gap-3 cursor-pointer group">
-                                <input type="checkbox" checked={bonoSierra} onChange={e => setBonoSierra(e.target.checked)} className="w-4 h-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900 transition-colors cursor-pointer" />
-                                <span className="text-[13px] font-medium text-gray-700 group-hover:text-gray-900">Bono Sierra</span>
-                            </label>
-                            <label className="flex items-center gap-3 cursor-pointer group">
-                                <input type="checkbox" checked={bonoDoble} onChange={e => setBonoDoble(e.target.checked)} className="w-4 h-4 rounded border-gray-300 text-gray-900 focus:ring-gray-900 transition-colors cursor-pointer" />
-                                <span className="text-[13px] font-medium text-gray-700 group-hover:text-gray-900">Bono Doble</span>
-                            </label>
-                            <div className="w-px h-6 bg-gray-200 hidden lg:block"></div>
-                            <div className="flex items-center gap-2">
-                                <span className="text-[12px] font-medium text-gray-500">Est. Obregón</span>
-                                <div className="flex items-center bg-white border border-gray-200 rounded-lg p-0.5 shadow-sm">
-                                    <button onClick={() => setEstObregon(Math.max(0, estObregon - 1))} className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-50 rounded-md transition-colors"><i className="fas fa-minus text-[10px]"></i></button>
-                                    <span className="w-6 text-center text-[13px] font-semibold text-gray-900">{estObregon}</span>
-                                    <button onClick={() => setEstObregon(estObregon + 1)} className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-50 rounded-md transition-colors"><i className="fas fa-plus text-[10px]"></i></button>
-                                </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <span className="text-[12px] font-medium text-gray-500">Est. Mochis</span>
-                                <div className="flex items-center bg-white border border-gray-200 rounded-lg p-0.5 shadow-sm">
-                                    <button onClick={() => setEstMochis(Math.max(0, estMochis - 1))} className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-50 rounded-md transition-colors"><i className="fas fa-minus text-[10px]"></i></button>
-                                    <span className="w-6 text-center text-[13px] font-semibold text-gray-900">{estMochis}</span>
-                                    <button onClick={() => setEstMochis(estMochis + 1)} className="w-7 h-7 flex items-center justify-center text-gray-400 hover:text-gray-700 hover:bg-gray-50 rounded-md transition-colors"><i className="fas fa-plus text-[10px]"></i></button>
-                                </div>
-                            </div>
-                        </>
-                    )}
-                </div>
-                <button onClick={handleSave} className="w-full md:w-auto px-8 py-3 text-[14px] font-semibold text-white bg-gray-900 rounded-xl hover:bg-gray-800 focus:outline-none focus:ring-4 focus:ring-gray-900/20 transition-all shadow-lg flex items-center justify-center gap-2">
-                    <i className="fas fa-save"></i> Guardar y Calcular
+            {/* ── 4. Bottom Actions ── */}
+            <div className="px-4 py-3 bg-slate-50 border-t border-slate-200 flex justify-end">
+                <button onClick={handleSave} className="w-full md:w-auto px-6 py-2 text-xs font-bold text-white bg-slate-900 rounded-lg hover:bg-slate-800 transition-all shadow-sm flex items-center justify-center gap-1.5 active:scale-95">
+                    <i className="fas fa-save"></i> Guardar y Recalcular
                 </button>
             </div>
+
         </div>
     )
 }
