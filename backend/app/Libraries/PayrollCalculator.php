@@ -49,7 +49,8 @@ class PayrollCalculator
                 $origenRow     = strtoupper(trim((string) ($row['Origen'] ?? ''))) ?: null;
                 $destinoRow    = strtoupper(trim((string) ($row['Destino'] ?? ''))) ?: null;
 
-                $totalIncentive  += max(0.0, $dieselAFavor);
+                $totalIncentive  += 0.0;  // B-03: Diesel es manual-only — NO se suma al incentivo automáticamente.
+                // El campo Diesel_A_Favor del row es null (o un valor informativo) y se excluye del Total_Pay.
                 $totalRecarga    += $recarga;
                 $totalLitrosPago += $litrosAPago;
                 $totalKms        += $kms;
@@ -88,9 +89,20 @@ class PayrollCalculator
 
             $savings = $totalLitrosPago - $totalRecarga;
 
+            // B-05: Para ambos segmentos (FCH y PAC), usar la sumatoria de Pago_Por_Km
+            // calculada individualmente por pierna en BoletaProcessor. Esto soporta boletas mixtas.
+            // Para PAC: cada pierna ya tiene Pago_Por_Km = kmsAdj × (0.30 si C, 0.15 si V).
+            // Para FCH: cada pierna ya tiene Pago_Por_Km = $110.00 o $55.00.
+            // Para PAC legacy (sin Rows), mantener el cálculo por $kmsPaid * $pacRate como fallback.
             if ($isPac) {
-                $pacRate = ($trip['Manual_Pac_Loaded'] ?? false) ? 0.30 : 0.15;
-                $basePay = $kmsPaid > 0 ? $kmsPaid * $pacRate : $totalKms * $pacRate;
+                if ($totalBasePay > 0) {
+                    // Modo moderno: sumatoria de piernas ya calculadas
+                    $basePay = $totalBasePay;
+                } else {
+                    // Modo legacy: boleta sin Rows estructuradas
+                    $pacRate = ($trip['Manual_Pac_Loaded'] ?? false) ? 0.30 : 0.15;
+                    $basePay = $kmsPaid > 0 ? $kmsPaid * $pacRate : 0.0;
+                }
 
                 $bonuses = 0.0;
                 if ($trip['Manual_Pac_Bono_Sierra'] ?? false) {

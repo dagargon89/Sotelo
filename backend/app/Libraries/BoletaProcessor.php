@@ -58,6 +58,9 @@ class BoletaProcessor
             $startTs = null;
             $endTs = null;
             $tableRows = [];
+            // B-04: si alguna pierna usa km del CSV en lugar del tabulador, la boleta
+            // queda en NEEDS_INPUT para revisión manual del operador.
+            $hasKmFallback = false;
 
             foreach ($boletaRows as $row) {
                 $origin = strtoupper(trim((string) ($row['Origen'] ?? '')));
@@ -83,38 +86,67 @@ class BoletaProcessor
                     $endTs = $tsEnd;
                 }
 
-                $isLoaded = ($status === 'FACTURADO')
-                    || in_array($tipo, ['IMP-01', 'IMP-02', 'EXP-01', 'EXP-02', 'FOR-01', 'FOR-02', 'MDC-01', 'MDC-02', 'TRI-01', 'TRI-02', 'TRE-01', 'TRE-02', 'LOC-01', 'LOC-02'], true);
-
-                if (strpos($comments, 'VACIO') !== false || strpos($comments, 'VASIO') !== false || $status === 'COMPLETO'
-                    || in_array($tipo, ['PTT-00', 'LOC-00', 'FOR-00', 'IMP-00', 'EXP-00'], true)) {
+                // ── B-01: Jerarquía explícita Status > Tipo > Comentarios ───────────────
+                // FACTURADO (cargado) nunca es anulado por el comentario "VACIO".
+                // COMPLETO/TERMINADO significa siempre viaje vacío o PT.
+                if ($status === 'FACTURADO') {
+                    // Prioridad máxima: el sistema de Genesis marcó el flete como facturado (cargado).
+                    $isLoaded = true;
+                } elseif ($status === 'COMPLETO' || $status === 'TERMINADO') {
+                    // COMPLETO/TERMINADO = pierna de retorno vacío o PT.
                     $isLoaded = false;
+                } else {
+                    // Sin status definitivo: inferir desde Tipo.
+                    $isLoaded = in_array($tipo, ['IMP-01', 'IMP-02', 'EXP-01', 'EXP-02', 'FOR-01', 'FOR-02', 'MDC-01', 'MDC-02', 'TRI-01', 'TRI-02', 'TRE-01', 'TRE-02', 'LOC-01', 'LOC-02'], true);
+                    // Tipos explícitamente vacíos/PT anulan la inferencia anterior.
+                    if (in_array($tipo, ['PTT-00', 'LOC-00', 'FOR-00', 'IMP-00', 'EXP-00'], true)
+                        || strpos($comments, 'VACIO') !== false
+                        || strpos($comments, 'VASIO') !== false) {
+                        $isLoaded = false;
+                    }
                 }
 
                 if (strpos($tipo, 'FOR') !== false || strpos($origin, 'CHIH') !== false || strpos($dest, 'CHIH') !== false) {
                     $hasForaneo = true;
                 }
 
-                $rawKms = $this->routeResolver->resolve($origin, $dest, (float) ($row['Kms'] ?? 0));
+                // B-04: Usar resolveWithSource() para detectar si se usó el tabulador o el odómetro.
+                $resolved = $this->routeResolver->resolveWithSource($origin, $dest, (float) ($row['Kms'] ?? 0));
+                $rawKms = $resolved['km'];
+                $kmSource = $resolved['source'];
+                if ($kmSource === 'FALLBACK') {
+                    $hasKmFallback = true;
+                }
                 $kmsAdj = $rawKms;
 
+                // B-02: La deducción ELP solo aplica a piernas FCH (no PAC).
+                // Las rutas PAC estándar no cruzan El Paso; aplicar la deducción en PAC sería incorrecto.
                 $isCruce = false;
-                if (strpos($origin, 'EL PASO') !== false && (strpos($dest, 'JUAREZ') !== false || strpos($dest, 'RIO BRAVO') !== false || strpos($dest, 'ZARAGOZA') !== false)) {
-                    $isCruce = true;
-                }
-                if (strpos($dest, 'EL PASO') !== false && (strpos($origin, 'JUAREZ') !== false || strpos($origin, 'RIO BRAVO') !== false || strpos($origin, 'ZARAGOZA') !== false)) {
-                    $isCruce = true;
-                }
-                if ($isCruce && $rawKms >= 40.0) {
-                    $kmsAdj = max(0.0, $rawKms - 40.0);
+                $isLegPac = $this->pacificoDetector->isPacifico($origin) || $this->pacificoDetector->isPacifico($dest);
+                if (!$isLegPac) {
+                    if (strpos($origin, 'EL PASO') !== false && (strpos($dest, 'JUAREZ') !== false || strpos($dest, 'RIO BRAVO') !== false || strpos($dest, 'ZARAGOZA') !== false)) {
+                        $isCruce = true;
+                    }
+                    if (strpos($dest, 'EL PASO') !== false && (strpos($origin, 'JUAREZ') !== false || strpos($origin, 'RIO BRAVO') !== false || strpos($origin, 'ZARAGOZA') !== false)) {
+                        $isCruce = true;
+                    }
+                    if ($isCruce && $rawKms >= 40.0) {
+                        $kmsAdj = max(0.0, $rawKms - 40.0);
+                    }
                 }
 
                 $totalKmsRaw += $rawKms;
                 $totalKmsAdjusted += $kmsAdj;
 
-                if (!$isPac) {
-                    $basePay += $isLoaded ? 110.00 : 55.00;
+                // B-05: El pago por pierna se determina individualmente según si la pierna es PAC o FCH.
+                // Esto permite boletas mixtas: una pierna CHI→JRZ paga FCH ($110/$55),
+                // mientras que una pierna a OBREGON paga PAC ($0.30/$0.15 por km).
+                if ($isLegPac) {
+                    $legBasePay = $isLoaded ? round($kmsAdj * 0.30, 2) : round($kmsAdj * 0.15, 2);
+                } else {
+                    $legBasePay = $isLoaded ? 110.00 : 55.00;
                 }
+                $basePay += $legBasePay;
 
                 $cvpt = 'V';
                 if (strpos($tipo, 'PT') !== false || strpos($tipo, 'PTT') !== false) {
@@ -123,7 +155,10 @@ class BoletaProcessor
                     $cvpt = 'C';
                 }
 
-                $legPay = $isPac ? 0.0 : ($isLoaded ? 110.00 : 55.00);
+                // B-05: legPay ya calculado arriba como $legBasePay (por km para PAC, flat para FCH).
+                $legPay = $legBasePay;
+                // B-03: litrosPago son LITROS de referencia para el operador — no pesos.
+                // NO se suman al Total_Pay; están aquí solo para visualización en la boleta.
                 $litrosPago = $unitYield > 0 ? round($kmsAdj / $unitYield, 2) : 0.0;
 
                 $tableRows[] = [
@@ -142,7 +177,13 @@ class BoletaProcessor
                     'Cliente' => trim((string) ($row['Cliente'] ?? '')),
                     'Pago_Por_Km' => $legPay,
                     'Litros_A_Pago' => $litrosPago,
-                    'Diesel_A_Favor' => $litrosPago,
+                    // B-03: Litros_Referencia son LITROS (no pesos). Solo para referencia del operador.
+                    // PayrollCalculator NO debe sumarlos al Total_Pay (violación de política manual-only).
+                    'Litros_Referencia' => $litrosPago,
+                    // Diesel_A_Favor se deja en null para forzar captura manual del operador.
+                    'Diesel_A_Favor' => null,
+                    // B-04: fuente del km (TABULADO = tabulador maestro, FALLBACK = odómetro del CSV).
+                    'Km_Source' => $kmSource,
                     'Tipo' => trim((string) ($row['Tipo'] ?? '')),
                     'Estatus_Flete' => trim((string) ($row['Estatus flete'] ?? '')),
                     'Is_Loaded' => $isLoaded,
@@ -173,6 +214,8 @@ class BoletaProcessor
                 'Manual_Actual_Price_Per_Liter' => 0.0,
                 'Manual_Bono_Quimico' => false,
                 'Payroll_Week' => $this->getPayrollWeek($startTs),
+                // B-04: Flag explícita para que el frontend muestre la alerta de odómetro.
+                'Has_Km_Fallback' => $hasKmFallback,
                 'Status' => 'NEEDS_INPUT',
                 'Is_Pacifico' => $isPac,
                 'Manual_Pac_Loaded' => false,

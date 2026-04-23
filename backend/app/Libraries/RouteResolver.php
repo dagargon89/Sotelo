@@ -37,12 +37,24 @@ class RouteResolver
 
     public function resolve(string $origin, string $dest, float $rowKms = 0): float
     {
+        return $this->resolveWithSource($origin, $dest, $rowKms)['km'];
+    }
+
+    /**
+     * Resuelve la distancia y retorna además la fuente del dato.
+     * B-04: Permite detectar si se usó el tabulador maestro (TABULADO)
+     * o el km del CSV/odómetro del conductor (FALLBACK).
+     *
+     * @return array{km: float, source: 'TABULADO'|'FALLBACK'}
+     */
+    public function resolveWithSource(string $origin, string $dest, float $rowKms = 0): array
+    {
         $orgUp = strtoupper(trim($origin));
         $destUp = strtoupper(trim($dest));
         $key = $orgUp . '|' . $destUp;
 
         if (isset($this->clientRoutes[$key])) {
-            return $this->clientRoutes[$key];
+            return ['km' => $this->clientRoutes[$key], 'source' => 'TABULADO'];
         }
 
         $orgNorm = $this->normalizeMain($orgUp);
@@ -50,17 +62,19 @@ class RouteResolver
         $keyNorm = $orgNorm . '|' . $destNorm;
 
         if (isset($this->generalRoutes[$keyNorm])) {
-            return $this->generalRoutes[$keyNorm];
+            return ['km' => $this->generalRoutes[$keyNorm], 'source' => 'TABULADO'];
         }
 
         $pacOrg = (strpos($orgNorm, 'OBR') !== false) ? 'OBREGON' : $orgNorm;
         $pacDest = (strpos($destNorm, 'OBR') !== false) ? 'OBREGON' : $destNorm;
         $keyPac = $pacOrg . '|' . $pacDest;
         if (isset($this->pacificoRoutes[$keyPac])) {
-            return $this->pacificoRoutes[$keyPac];
+            return ['km' => $this->pacificoRoutes[$keyPac], 'source' => 'TABULADO'];
         }
 
-        return $rowKms > 0 ? $rowKms : 0.0;
+        // Fallback al odómetro del CSV — el operador debe revisar manualmente.
+        $km = $rowKms > 0 ? $rowKms : 0.0;
+        return ['km' => $km, 'source' => 'FALLBACK'];
     }
 
     private function normalizeMain(string $loc): string

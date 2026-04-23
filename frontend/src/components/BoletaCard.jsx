@@ -259,6 +259,15 @@ export default function BoletaCard({ trip, onUpdate, dieselPrice, unitYields = {
                                 <span className="inline-flex items-center gap-1.5 bg-emerald-600 text-white text-[12px] font-semibold px-3 py-1 rounded-lg tracking-wide">
                                     Rend. Pago {unitYields[trip.Unit] || defaultYield}
                                 </span>
+                                {/* B-04: Alerta de km odómetro — alguna pierna no tiene ruta en el tabulador */}
+                                {trip.Has_Km_Fallback && (
+                                    <span
+                                        className="inline-flex items-center gap-1.5 bg-amber-500 text-white text-[12px] font-semibold px-3 py-1 rounded-lg tracking-wide animate-pulse"
+                                        title="Una o más piernas no tienen ruta en el tabulador maestro. Los km fueron tomados del odómetro del CSV. Revise manualmente."
+                                    >
+                                        ⚠ KM Odómetro
+                                    </span>
+                                )}
                             </div>
 
                             <span className="text-[13px] text-gray-500">{trip.Start_Date || 'Fecha N/A'}</span>
@@ -338,7 +347,18 @@ export default function BoletaCard({ trip, onUpdate, dieselPrice, unitYields = {
                                             <td className="px-4 py-3 text-gray-600 text-[14px]">{row.Fecha_Salida || '—'}</td>
                                             <td className="px-4 py-3 text-gray-600 text-[14px]">{row.Fecha_Llegada || '—'}</td>
                                             <td className="px-4 py-3 text-gray-800 font-medium text-[14px]" title={row.Origen}>
-                                                <div className="truncate">{row.Origen || '—'}</div>
+                                                <div className="flex items-center gap-1">
+                                                    <span className="truncate">{row.Origen || '—'}</span>
+                                                    {/* B-04: Indicar si los km de esta pierna son del odómetro */}
+                                                    {row.Km_Source === 'FALLBACK' && (
+                                                        <span
+                                                            className="flex-shrink-0 text-[10px] font-bold text-amber-600 bg-amber-100 px-1 rounded"
+                                                            title="Km tomados del odómetro del CSV, no del tabulador maestro"
+                                                        >
+                                                            ⚠KM
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </td>
                                             <td className="px-4 py-3 text-gray-800 font-medium text-[14px]" title={row.Destino}>
                                                 <div className="truncate">{row.Destino || '—'}</div>
