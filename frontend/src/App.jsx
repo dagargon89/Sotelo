@@ -60,18 +60,27 @@ function App() {
   const availableWeeks = useMemo(() => [...new Set(trips.map(t => t.Payroll_Week || 0))].filter(w => w > 0), [trips])
 
   // Derive unique driver names for the current week
-  const availableDrivers = [...new Set(
+  const availableDrivers = useMemo(() => [...new Set(
     trips.filter(t => t.Payroll_Week === selectedWeek).map(t => t.Driver).filter(Boolean)
-  )].sort()
+  )].sort(), [trips, selectedWeek])
 
   // Filter trips based on selection
-  const visibleTrips = selectedWeek
+  const visibleTrips = useMemo(() => selectedWeek
     ? (selectedWeek === 'ALL' ? trips : trips.filter(t => {
-      const matchWeek = t.Payroll_Week === selectedWeek && t.Status === activeTab
+      const matchWeek = t.Payroll_Week === selectedWeek
+
+      // Filtro por Estado (Sincronizado)
+      let matchStatus = true
+      if (activeTab === 'NEEDS_INPUT') matchStatus = t.Status === 'NEEDS_INPUT'
+      if (activeTab === 'PENDING') matchStatus = t.Status === 'PENDING'
+      if (activeTab === 'APPROVED') matchStatus = t.Status === 'APPROVED'
+      // Si activeTab === 'ALL', no filtramos (se muestran todos)
+
       const matchDriver = !driverFilter || (t.Driver || '').toLowerCase().includes(driverFilter.toLowerCase())
-      return matchWeek && matchDriver
+
+      return matchWeek && matchStatus && matchDriver
     }))
-    : []
+    : [], [trips, selectedWeek, activeTab, driverFilter])
 
   const handleFileUpload = async (file) => {
     setLoading(true)
@@ -150,10 +159,8 @@ function App() {
               onDieselPriceChange={setDieselPrice}
             />
 
-            {/* Status Tabs + Filtro conductor — OCULTO: reemplazado por nuevo componente.
-                Para restaurar, descomentar el bloque completo.
             {/* Status Tabs + Filtro conductor */}
-            {/* <div className="flex items-center gap-3 mb-6 flex-wrap">
+            <div className="flex items-center gap-3 mb-6 flex-wrap">
               <div className="flex space-x-1 bg-slate-200 p-1 rounded-lg">
                 <button
                   onClick={() => { setActiveTab('NEEDS_INPUT'); setDriverFilter('') }}
@@ -192,7 +199,7 @@ function App() {
                   <button onClick={() => setDriverFilter('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-sm leading-none">×</button>
                 )}
               </div>
-            </div> */}
+            </div>
 
             <TripList
               trips={visibleTrips}
@@ -200,6 +207,8 @@ function App() {
               dieselPrice={dieselPrice}
               unitYields={unitYields}
               defaultYield={defaultYield}
+              onFilterChange={setActiveTab} // Sincronizamos el Header nuevo con el estado de App
+              onSearchChange={setDriverFilter}
             />
           </>
         )}

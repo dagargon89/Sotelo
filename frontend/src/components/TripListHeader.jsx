@@ -3,7 +3,7 @@ import WorkflowGuide from './WorkflowGuide';
 
 export default function TripListHeader({ totalTrips, approvedCount, onFilterChange, searchTerm, onSearchChange }) {
     const [isGuideOpen, setIsGuideOpen] = useState(false);
-    const [activeTab, setActiveTab] = useState('ALL');
+    const [activeTab, setActiveTab] = useState('PENDING');
 
     const handleTabChange = (tab) => {
         setActiveTab(tab);
