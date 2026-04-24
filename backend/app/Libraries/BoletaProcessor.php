@@ -119,19 +119,38 @@ class BoletaProcessor
                 }
                 $kmsAdj = $rawKms;
 
-                // B-02: La deducción ELP solo aplica a piernas FCH (no PAC).
-                // Las rutas PAC estándar no cruzan El Paso; aplicar la deducción en PAC sería incorrecto.
-                $isCruce = false;
+                // B-02 / D-004 fix: La deducción ELP solo aplica a piernas FCH (no PAC).
+                // calculadoras_sotelo_payroll_rules.md §Códigos C/V/PT define 3 casos:
+                //   Código 4 = ELP estándar          → deducir 40 km
+                //   Código 5 = FOK/HAW               → deducir 50 km
+                //   Código 6 = FOK/HAW + ELP         → deducir 90 km
+                $isCruce      = false;
+                $cruceKmDeduct = 0.0;
                 $isLegPac = $this->pacificoDetector->isPacifico($origin) || $this->pacificoDetector->isPacifico($dest);
                 if (!$isLegPac) {
-                    if (strpos($origin, 'EL PASO') !== false && (strpos($dest, 'JUAREZ') !== false || strpos($dest, 'RIO BRAVO') !== false || strpos($dest, 'ZARAGOZA') !== false)) {
-                        $isCruce = true;
+                    $isFokHaw  = strpos($origin, 'FOK') !== false || strpos($dest, 'FOK') !== false
+                              || strpos($origin, 'HAW') !== false || strpos($dest, 'HAW') !== false
+                              || strpos($origin, 'FOKKER') !== false || strpos($dest, 'FOKKER') !== false
+                              || strpos($origin, 'HAWKINS') !== false || strpos($dest, 'HAWKINS') !== false;
+                    $isElp     = (strpos($origin, 'EL PASO') !== false && (strpos($dest, 'JUAREZ') !== false || strpos($dest, 'RIO BRAVO') !== false || strpos($dest, 'ZARAGOZA') !== false))
+                              || (strpos($dest, 'EL PASO') !== false && (strpos($origin, 'JUAREZ') !== false || strpos($origin, 'RIO BRAVO') !== false || strpos($origin, 'ZARAGOZA') !== false));
+
+                    if ($isFokHaw && $isElp) {
+                        // Código 6: FOK/HAW + ELP → -90 km
+                        $isCruce       = true;
+                        $cruceKmDeduct = 90.0;
+                    } elseif ($isFokHaw) {
+                        // Código 5: solo FOK/HAW → -50 km
+                        $isCruce       = true;
+                        $cruceKmDeduct = 50.0;
+                    } elseif ($isElp) {
+                        // Código 4: ELP estándar → -40 km
+                        $isCruce       = true;
+                        $cruceKmDeduct = 40.0;
                     }
-                    if (strpos($dest, 'EL PASO') !== false && (strpos($origin, 'JUAREZ') !== false || strpos($origin, 'RIO BRAVO') !== false || strpos($origin, 'ZARAGOZA') !== false)) {
-                        $isCruce = true;
-                    }
-                    if ($isCruce && $rawKms >= 40.0) {
-                        $kmsAdj = max(0.0, $rawKms - 40.0);
+
+                    if ($isCruce && $rawKms >= $cruceKmDeduct) {
+                        $kmsAdj = max(0.0, $rawKms - $cruceKmDeduct);
                     }
                 }
 

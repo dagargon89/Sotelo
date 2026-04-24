@@ -20,7 +20,12 @@ class PayrollCalculator
         $isPac           = (bool) ($trip['Is_Pacifico'] ?? false);
         $kmsPaid         = (float) ($trip['Total_Kms_Paid'] ?? 0);
         $rate            = (float) ($trip['Diesel_Rate'] ?? 0);
-        $bonoQuimicoVal  = (bool) ($trip['Manual_Bono_Quimico'] ?? false) ? 250.0 : 0.0;
+        // D-002 fix: Bono Químico es multiplicador (250 × count QMS), NO booleano.
+        // RULE_LEDGER R-015: "Bono_Pay += 250.00 × count(QMS-marked movements)".
+        // El campo Manual_Bono_Quimico_Count es un entero (número de movimientos QMS en la semana).
+        // Compatibilidad retroactiva: si llega booleano true (legacy), se trata como count=1.
+        $rawBonoQuimico  = $trip['Manual_Bono_Quimico_Count'] ?? ($trip['Manual_Bono_Quimico'] ?? 0);
+        $bonoQuimicoVal  = (int) $rawBonoQuimico * 250.0;
 
         if (!empty($trip['Rows']) && is_array($trip['Rows'])) {
             $totalIncentive  = 0.0;
@@ -109,7 +114,9 @@ class PayrollCalculator
                     $bonuses += 500.0;
                 }
                 if ($trip['Manual_Pac_Bono_Doble'] ?? false) {
-                    $bonuses += 1726.0;
+                    // D-001 fix: R-018 (Aptiv Guamúchil $2,439) validado en nóminas pagadas (conf:86).
+                    // Evidencia: DOBLE OPERADOR=4878 en paid data = 2439×2. R-017 ($1726) es candidato no confirmado.
+                    $bonuses += 2439.0;
                 }
                 $bonuses += (int) ($trip['Manual_Pac_Estancia_Obregon'] ?? 0) * 600.0;
                 $bonuses += (int) ($trip['Manual_Pac_Estancia_Mochis'] ?? 0) * 300.0;
@@ -153,7 +160,9 @@ class PayrollCalculator
                     $bonuses += 500.0;
                 }
                 if ($trip['Manual_Pac_Bono_Doble'] ?? false) {
-                    $bonuses += 1726.0;
+                    // D-001 fix: R-018 (Aptiv Guamúchil $2,439) validado en nóminas pagadas (conf:86).
+                    // Evidencia: DOBLE OPERADOR=4878 en paid data = 2439×2. R-017 ($1726) es candidato no confirmado.
+                    $bonuses += 2439.0;
                 }
                 $bonuses += (int) ($trip['Manual_Pac_Estancia_Obregon'] ?? 0) * 600.0;
                 $bonuses += (int) ($trip['Manual_Pac_Estancia_Mochis'] ?? 0) * 300.0;
