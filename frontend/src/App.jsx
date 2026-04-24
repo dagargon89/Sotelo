@@ -150,8 +150,10 @@ function App() {
               onDieselPriceChange={setDieselPrice}
             />
 
+            {/* Status Tabs + Filtro conductor — OCULTO: reemplazado por nuevo componente.
+                Para restaurar, descomentar el bloque completo.
             {/* Status Tabs + Filtro conductor */}
-            <div className="flex items-center gap-3 mb-6 flex-wrap">
+            {/* <div className="flex items-center gap-3 mb-6 flex-wrap">
               <div className="flex space-x-1 bg-slate-200 p-1 rounded-lg">
                 <button
                   onClick={() => { setActiveTab('NEEDS_INPUT'); setDriverFilter('') }}
@@ -190,7 +192,7 @@ function App() {
                   <button onClick={() => setDriverFilter('')} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-sm leading-none">×</button>
                 )}
               </div>
-            </div>
+            </div> */}
 
             <TripList
               trips={visibleTrips}
