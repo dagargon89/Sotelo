@@ -11,12 +11,9 @@ const NewBadge = () => SHOW_NEW_BADGES ? (
 export default function SummaryBar({ trips, selectedWeek }) {
     // ── Totales financieros ──────────────────────────────────────────────────
     const totals = trips.reduce((acc, trip) => {
-        const incentive = trip.Calculated_Incentive ?? trip.Incentive_Pay ?? 0
-        const total = trip.Calculated_Total ?? trip.Total_Pay ?? trip.Base_Pay
-
-        acc.base     += trip.Base_Pay ?? 0
-        acc.incentive += incentive
-        acc.total    += total
+        acc.base      += parseFloat(trip.Base_Pay     || 0)
+        acc.incentive += parseFloat(trip.Incentive_Pay || 0)
+        acc.total     += parseFloat(trip.Total_Pay    || 0)
 
         // ── Contadores de categoría de movimiento (desde Rows) ─────────────
         const rows = trip.Rows ?? []
