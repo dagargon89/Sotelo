@@ -57,7 +57,7 @@ function DriverAccordion({ driverName, driverTrips, expandedTrip, onToggleTrip, 
                             )}
                             {statusCounts.needsInput > 0 && (
                                 <span className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase px-1.5 py-0.5 rounded ${isOpen ? 'bg-amber-500/30 text-amber-200' : 'bg-amber-100 text-amber-700'}`}>
-                                    <i className="fas fa-exclamation-circle text-[9px]"></i> {statusCounts.needsInput} Captura
+                                    <i className="fas fa-exclamation-circle text-[9px]"></i> {statusCounts.needsInput} sin capturar
                                 </span>
                             )}
                             {statusCounts.pending > 0 && (
@@ -133,7 +133,7 @@ function InvoiceRow({ trip, index, isExpanded, onToggle, onUpdate, dieselPrice, 
 
     const statusConfig = {
         APPROVED:    { label: 'Aprobado',  cls: 'bg-emerald-100 text-emerald-700', icon: 'fa-check-circle' },
-        NEEDS_INPUT: { label: 'Captura',   cls: 'bg-amber-100 text-amber-700',     icon: 'fa-exclamation-circle' },
+        NEEDS_INPUT: { label: 'Sin capturar', cls: 'bg-amber-100 text-amber-700',   icon: 'fa-exclamation-circle' },
         PENDING:     { label: 'Pendiente', cls: 'bg-slate-100 text-slate-600',     icon: 'fa-clock' },
     }
     const statusKey = trip.Status in statusConfig ? trip.Status : 'PENDING'

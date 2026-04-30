@@ -230,21 +230,24 @@ export default function BoletaCard({ trip, onUpdate, dieselPrice, unitYields = {
                             <i className="fas fa-check-circle"></i> Aprobado
                         </div>
                     ) : trip.Status === 'NEEDS_INPUT' ? (
-                        <div className="bg-amber-100 text-amber-700 px-2.5 py-1 rounded text-xs font-bold flex items-center gap-1">
-                            <i className="fas fa-exclamation-circle"></i> Captura
+                        <div className="bg-amber-100 text-amber-700 px-2.5 py-1 rounded text-xs font-bold flex items-center gap-1 cursor-help" title="Presiona el botón para aprobar la boleta">
+                            <i className="fas fa-exclamation-circle"></i> Sin capturar
                         </div>
                     ) : (
                         <div className="bg-slate-100 text-slate-600 px-2.5 py-1 rounded text-xs font-bold flex items-center gap-1">
                             <i className="fas fa-clock"></i> Pendiente
                         </div>
                     )}
-                    
+
                     <div className="border-l border-slate-200 pl-3">
-                        <label className="flex items-center gap-1.5 cursor-pointer group">
+                        <label className="flex items-center gap-1.5 cursor-pointer group" title={trip.Status === 'APPROVED' ? 'Quitar aprobación' : 'Marcar como aprobada'}>
                             <div className="relative flex items-center">
                                 <input type="checkbox" checked={trip.Status === 'APPROVED'} onChange={toggleStatus} className="peer sr-only" />
-                                <div className="w-7 h-4 bg-slate-200 rounded-full peer peer-focus:ring-1 peer-focus:ring-emerald-500 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-emerald-500"></div>
+                                <div className="w-7 h-4 bg-red-400 rounded-full peer peer-focus:ring-1 peer-focus:ring-emerald-500 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-emerald-500"></div>
                             </div>
+                            <span className="text-[10px] font-semibold text-slate-400 group-hover:text-slate-600 transition-colors select-none">
+                                {trip.Status === 'APPROVED' ? 'Aprobada' : 'Aprobar'}
+                            </span>
                         </label>
                     </div>
                 </div>
