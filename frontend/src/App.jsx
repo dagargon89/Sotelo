@@ -56,8 +56,29 @@ function App() {
     init()
   }, [sessionToken])
 
-  // Derive available weeks from trips
-  const availableWeeks = useMemo(() => [...new Set(trips.map(t => t.Payroll_Week || 0))].filter(w => w > 0), [trips])
+  // Derive available weeks with date ranges from trips
+  const availableWeeks = useMemo(() => {
+    const weekMap = new Map()
+    trips.forEach(t => {
+      const w = t.Payroll_Week || 0
+      if (w <= 0) return
+      if (!weekMap.has(w)) weekMap.set(w, { week: w, dates: [] })
+      if (t.Start_Date) weekMap.get(w).dates.push(t.Start_Date)
+    })
+    return Array.from(weekMap.values()).map(({ week, dates }) => {
+      if (dates.length === 0) return { week, label: null }
+      const parsed = dates.map(d => new Date(d.replace(' ', 'T'))).filter(d => !isNaN(d))
+      if (parsed.length === 0) return { week, label: null }
+      const min = new Date(Math.min(...parsed))
+      const max = new Date(Math.max(...parsed))
+      const fmt = (d) => d.toLocaleDateString('es-MX', { day: '2-digit', month: 'short' })
+      const label = min.toDateString() === max.toDateString() ? fmt(min) : `${fmt(min)} – ${fmt(max)}`
+      return { week, label }
+    })
+  }, [trips])
+
+  // Derive selected week info (for header label)
+  const selectedWeekInfo = useMemo(() => availableWeeks.find(w => w.week === selectedWeek) || null, [availableWeeks, selectedWeek])
 
   // Derive unique driver names for the current week
   const availableDrivers = useMemo(() => [...new Set(
@@ -134,7 +155,12 @@ function App() {
           <div className="text-xs text-slate-400">
             <a href="/admin" className="mr-3 text-blue-300 hover:text-blue-100 underline">Administracion</a>
             v1.1 (Control Financiero)
-            {selectedWeek && <span className="ml-2 bg-blue-900 px-2 py-1 rounded text-blue-200">Semana {selectedWeek}</span>}
+            {selectedWeek && (
+                <span className="ml-2 bg-blue-900 px-2 py-1 rounded text-blue-200">
+                  Semana {selectedWeek}
+                  {selectedWeekInfo?.label && <span className="ml-1.5 opacity-70 text-xs">{selectedWeekInfo.label}</span>}
+                </span>
+              )}
             {selectedWeek && (
               <button onClick={() => setSelectedWeek(null)} className="ml-2 hover:text-white underline">
                 Cambiar
@@ -157,6 +183,7 @@ function App() {
               trips={trips.filter(t => t.Payroll_Week === selectedWeek)}
               dieselPrice={dieselPrice}
               onDieselPriceChange={setDieselPrice}
+              onFilterToErrors={() => { setActiveTab('NEEDS_INPUT'); setDriverFilter('') }}
             />
 
             {/* Status Tabs + Filtro conductor */}

@@ -2,30 +2,30 @@ import React, { useState, useEffect } from 'react'
 import { buildApiUrl } from '../api'
 
 // Compact iOS-style Toggle Switch
-const ToggleSwitch = ({ checked, onChange, label, amountLabel }) => (
-    <label className="flex items-center justify-between cursor-pointer group bg-white border border-slate-200 px-3 py-2 rounded-lg hover:border-slate-300 hover:shadow-sm transition-all">
+const ToggleSwitch = ({ checked, onChange, label, amountLabel, disabled }) => (
+    <label className={`flex items-center justify-between bg-white border border-slate-200 px-3 py-2 rounded-lg hover:border-slate-300 hover:shadow-sm transition-all ${disabled ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer group'}`}>
         <div className="flex flex-col">
             <span className="text-xs font-bold text-slate-700 group-hover:text-slate-900">{label}</span>
             {amountLabel && <span className="text-[10px] font-semibold text-emerald-600">{amountLabel}</span>}
         </div>
         <div className="relative ml-2">
-            <input type="checkbox" checked={checked} onChange={e => onChange(e.target.checked)} className="peer sr-only" />
+            <input type="checkbox" checked={checked} onChange={e => !disabled && onChange(e.target.checked)} disabled={disabled} className="peer sr-only" />
             <div className="w-8 h-4 bg-slate-200 rounded-full peer peer-focus:ring-1 peer-focus:ring-blue-500 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-blue-600"></div>
         </div>
     </label>
 );
 
 // Compact Stepper Component
-const Stepper = ({ value, onChange, label, amountLabel }) => (
-    <div className="flex items-center justify-between bg-white border border-slate-200 px-3 py-2 rounded-lg hover:border-slate-300 hover:shadow-sm transition-all">
+const Stepper = ({ value, onChange, label, amountLabel, disabled }) => (
+    <div className={`flex items-center justify-between bg-white border border-slate-200 px-3 py-2 rounded-lg hover:border-slate-300 hover:shadow-sm transition-all ${disabled ? 'opacity-60' : ''}`}>
         <div className="flex flex-col">
             <span className="text-xs font-bold text-slate-700">{label}</span>
             {amountLabel && <span className="text-[10px] font-semibold text-emerald-600">{amountLabel}</span>}
         </div>
         <div className="flex items-center bg-slate-50 border border-slate-200 rounded p-0.5 ml-2">
-            <button onClick={() => onChange(Math.max(0, value - 1))} className="w-5 h-5 flex items-center justify-center text-slate-500 hover:text-slate-900 hover:bg-white rounded transition-colors"><i className="fas fa-minus text-[8px]"></i></button>
+            <button onClick={() => !disabled && onChange(Math.max(0, value - 1))} disabled={disabled} className="w-5 h-5 flex items-center justify-center text-slate-500 hover:text-slate-900 hover:bg-white rounded transition-colors disabled:cursor-not-allowed"><i className="fas fa-minus text-[8px]"></i></button>
             <span className="w-6 text-center text-xs font-bold text-slate-900">{value}</span>
-            <button onClick={() => onChange(value + 1)} className="w-5 h-5 flex items-center justify-center text-slate-500 hover:text-slate-900 hover:bg-white rounded transition-colors"><i className="fas fa-plus text-[8px]"></i></button>
+            <button onClick={() => !disabled && onChange(value + 1)} disabled={disabled} className="w-5 h-5 flex items-center justify-center text-slate-500 hover:text-slate-900 hover:bg-white rounded transition-colors disabled:cursor-not-allowed"><i className="fas fa-plus text-[8px]"></i></button>
         </div>
     </div>
 );
@@ -35,6 +35,7 @@ export default function TripCard({ trip, onUpdate, dieselPrice }) {
     const [priceInput, setPriceInput] = useState(trip.Manual_Actual_Price_Per_Liter || '')
     const [bonoQuimico, setBonoQuimico] = useState(trip.Manual_Bono_Quimico ?? false)
     const [showLegs, setShowLegs] = useState(false)
+    const [saveStatus, setSaveStatus] = useState('idle') // 'idle' | 'saving' | 'ok' | 'error'
 
     // Pacifico states
     const [pacLoaded, setPacLoaded] = useState(trip.Manual_Pac_Loaded ?? true)
@@ -99,6 +100,7 @@ export default function TripCard({ trip, onUpdate, dieselPrice }) {
     }
 
     const handleSave = async () => {
+        setSaveStatus('saving')
         const payload = {
             ...trip,
             Manual_Refuel_Liters: parseFloat(liters) || 0,
@@ -121,8 +123,11 @@ export default function TripCard({ trip, onUpdate, dieselPrice }) {
             if (data.trips && data.trips.length > 0) {
                 onUpdate(data.trips[0]);
             }
+            setSaveStatus('ok')
+            setTimeout(() => setSaveStatus('idle'), 2500)
         } catch (err) {
-            alert('Error recalculating trip: ' + err.message);
+            setSaveStatus('error')
+            setTimeout(() => setSaveStatus('idle'), 3000)
         }
     }
 
@@ -130,6 +135,7 @@ export default function TripCard({ trip, onUpdate, dieselPrice }) {
     const origin = routeParts[0];
     const destination = routeParts.length > 1 ? routeParts[routeParts.length - 1] : 'No Especificado';
     const initials = trip.Driver ? trip.Driver.substring(0, 2).toUpperCase() : 'DR';
+    const isApproved = trip.Status === 'APPROVED'
 
     const quimicoVal = bonoQuimico ? 250 : 0;
     let pacificoBonosVal = 0;
@@ -184,7 +190,7 @@ export default function TripCard({ trip, onUpdate, dieselPrice }) {
                         <label className="flex items-center gap-1.5 cursor-pointer group" title={trip.Status === 'APPROVED' ? 'Quitar aprobación' : 'Marcar como aprobada'}>
                             <div className="relative flex items-center">
                                 <input type="checkbox" checked={trip.Status === 'APPROVED'} onChange={toggleStatus} className="peer sr-only" />
-                                <div className="w-7 h-4 bg-red-400 rounded-full peer peer-focus:ring-1 peer-focus:ring-emerald-500 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-emerald-500"></div>
+                                <div className="w-7 h-4 bg-slate-300 rounded-full peer peer-focus:ring-1 peer-focus:ring-emerald-500 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-emerald-500"></div>
                             </div>
                             <span className="text-[10px] font-semibold text-slate-400 group-hover:text-slate-600 transition-colors select-none">
                                 {trip.Status === 'APPROVED' ? 'Aprobada' : 'Aprobar'}
@@ -196,7 +202,7 @@ export default function TripCard({ trip, onUpdate, dieselPrice }) {
 
             {/* ── Route & Finance Dashboard ── */}
             <div className="flex flex-col xl:flex-row divide-y xl:divide-y-0 xl:divide-x divide-slate-100">
-                
+
                 {/* Route Overview */}
                 <div className="px-4 py-4 xl:w-4/12 flex flex-col justify-between bg-white">
                     <div className="flex items-start gap-3 mb-4">
@@ -242,7 +248,7 @@ export default function TripCard({ trip, onUpdate, dieselPrice }) {
                             <span className="text-sm font-bold text-slate-800 leading-none">${trip.Base_Pay?.toFixed(2) || '0.00'}</span>
                         </div>
                         <div className="bg-amber-50 border border-amber-100 rounded-lg p-2.5 flex flex-col justify-center">
-                            <span className="text-[9px] font-bold text-amber-500 uppercase tracking-widest mb-1" title="Límite teórico sugerido">LT. PERMIT</span>
+                            <span className="text-[9px] font-bold text-amber-500 uppercase tracking-widest mb-1" title="Límite teórico de litros permitidos (calculado por KMs y rendimiento)">Límite Litros</span>
                             <span className="text-sm font-bold text-amber-800 leading-none">{trip.Allowed_Liters} L</span>
                         </div>
                         <div className="bg-indigo-50 border border-indigo-100 rounded-lg p-2.5 flex flex-col justify-center">
@@ -295,7 +301,7 @@ export default function TripCard({ trip, onUpdate, dieselPrice }) {
                             <ToggleSwitch checked={bonoQuimico} onChange={(val) => handleInputs(liters, priceInput, val)} label="Aplica Químico" amountLabel="+$250.00" />
                         </div>
                     </div>
-                    
+
                     {trip.Fuente_Tarifa === 'TABULADOR_BD' && (
                         <div className="mt-3 rounded-lg border border-indigo-100 bg-indigo-50/50 px-3 py-2 flex items-center gap-3">
                             <span className="text-[9px] font-bold uppercase tracking-widest text-indigo-500">Tarifa Cruce</span>
@@ -308,16 +314,19 @@ export default function TripCard({ trip, onUpdate, dieselPrice }) {
                 </div>
             </div>
 
-            {/* ── Pacifico Bonuses Toggles ── */}
-            {trip.Is_Pacifico && trip.Status === 'NEEDS_INPUT' && (
+            {/* ── Pacifico Bonuses Toggles — siempre visible para rutas Pacífico ── */}
+            {trip.Is_Pacifico && (
                 <div className="px-4 py-3 bg-slate-50 border-t border-slate-100">
-                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2">Incentivos Pacífico Manuales</h4>
+                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                        Incentivos Pacífico Manuales
+                        {isApproved && <span className="text-[9px] font-bold bg-slate-200 text-slate-500 px-1.5 py-0.5 rounded">Solo lectura</span>}
+                    </h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2">
-                        <ToggleSwitch checked={pacLoaded} onChange={setPacLoaded} label="Viaje Cargado" />
-                        <ToggleSwitch checked={bonoSierra} onChange={setBonoSierra} label="Bono Sierra" amountLabel="+$500.00" />
-                        <ToggleSwitch checked={bonoDoble} onChange={setBonoDoble} label="Bono Doble" amountLabel="+$1,726.00" />
-                        <Stepper value={estObregon} onChange={setEstObregon} label="Obregón" amountLabel="+$600/cu" />
-                        <Stepper value={estMochis} onChange={setEstMochis} label="Mochis" amountLabel="+$300/cu" />
+                        <ToggleSwitch checked={pacLoaded} onChange={setPacLoaded} label="Viaje Cargado" disabled={isApproved} />
+                        <ToggleSwitch checked={bonoSierra} onChange={setBonoSierra} label="Bono Sierra" amountLabel="+$500.00" disabled={isApproved} />
+                        <ToggleSwitch checked={bonoDoble} onChange={setBonoDoble} label="Bono Doble" amountLabel="+$1,726.00" disabled={isApproved} />
+                        <Stepper value={estObregon} onChange={setEstObregon} label="Obregón" amountLabel="+$600/cu" disabled={isApproved} />
+                        <Stepper value={estMochis} onChange={setEstMochis} label="Mochis" amountLabel="+$300/cu" disabled={isApproved} />
                     </div>
                 </div>
             )}
@@ -385,8 +394,25 @@ export default function TripCard({ trip, onUpdate, dieselPrice }) {
 
             {/* ── Final Action ── */}
             <div className="px-4 py-3 bg-slate-50 border-t border-slate-200 flex justify-end">
-                <button onClick={handleSave} className="w-full md:w-auto px-6 py-2 text-xs font-bold text-white bg-slate-900 rounded-lg hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900/20 transition-all shadow-sm active:scale-95 flex items-center justify-center gap-1.5">
-                    <i className="fas fa-save"></i> Guardar y Calcular
+                <button
+                    onClick={handleSave}
+                    disabled={saveStatus === 'saving'}
+                    className={`w-full md:w-auto px-6 py-2 text-xs font-bold text-white rounded-lg transition-all shadow-sm active:scale-95 flex items-center justify-center gap-1.5 disabled:cursor-not-allowed ${
+                        saveStatus === 'ok' ? 'bg-emerald-600 hover:bg-emerald-500' :
+                        saveStatus === 'error' ? 'bg-red-600 hover:bg-red-500' :
+                        saveStatus === 'saving' ? 'bg-slate-600' :
+                        'bg-slate-900 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900/20'
+                    }`}
+                >
+                    {saveStatus === 'saving' ? (
+                        <><i className="fas fa-spinner fa-spin"></i> Guardando...</>
+                    ) : saveStatus === 'ok' ? (
+                        <><i className="fas fa-check"></i> Guardado</>
+                    ) : saveStatus === 'error' ? (
+                        <><i className="fas fa-times"></i> Error al guardar</>
+                    ) : (
+                        <><i className="fas fa-save"></i> Guardar y Calcular</>
+                    )}
                 </button>
             </div>
         </div>

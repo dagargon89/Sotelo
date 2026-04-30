@@ -44,6 +44,10 @@ export default function BoletaCard({ trip, onUpdate, dieselPrice, unitYields = {
     // Accordion state
     const [expandedRows, setExpandedRows] = useState(new Set())
 
+    // UX states
+    const [saveStatus, setSaveStatus] = useState('idle') // 'idle' | 'saving' | 'ok' | 'error'
+    const [isDirty, setIsDirty] = useState(false)
+
     // Editable row data
     const [rowsData, setRowsData] = useState(() => {
         return (trip.Rows || []).map(row => ({
@@ -126,9 +130,15 @@ export default function BoletaCard({ trip, onUpdate, dieselPrice, unitYields = {
     }
 
     const handleRowFieldChange = (rowIndex, field, value) => {
+        // Clamp negative values for numeric fields
+        let cleanValue = value
+        if (['Kms', 'Recarga', 'Peso_Carga'].includes(field) && parseFloat(value) < 0) {
+            cleanValue = 0
+        }
+
         const newRowsData = [...rowsData]
-        newRowsData[rowIndex] = { ...newRowsData[rowIndex], [field]: value }
-        
+        newRowsData[rowIndex] = { ...newRowsData[rowIndex], [field]: cleanValue }
+
         const updatedRows = newRowsData.map(row => ({
             ...row,
             ...calculateDependentFields(row, newRowsData)
@@ -136,6 +146,7 @@ export default function BoletaCard({ trip, onUpdate, dieselPrice, unitYields = {
 
         setRowsData(updatedRows)
         recalcAndNotify(updatedRows)
+        setIsDirty(true)
     }
 
     const toggleStatus = () => {
@@ -144,6 +155,7 @@ export default function BoletaCard({ trip, onUpdate, dieselPrice, unitYields = {
     }
 
     const handleSave = async () => {
+        setSaveStatus('saving')
         const updatedRows = (trip.Rows || []).map((originalRow, i) => ({
             ...originalRow,
             ...rowsData[i]
@@ -170,14 +182,18 @@ export default function BoletaCard({ trip, onUpdate, dieselPrice, unitYields = {
             if (data.trips && data.trips.length > 0) {
                 onUpdate(data.trips[0])
             }
+            setSaveStatus('ok')
+            setIsDirty(false)
+            setTimeout(() => setSaveStatus('idle'), 2500)
         } catch (err) {
-            alert('Error al guardar: ' + err.message)
+            setSaveStatus('error')
+            setTimeout(() => setSaveStatus('idle'), 3000)
         }
     }
 
     const rows = trip.Rows || []
     const initials = trip.Driver ? trip.Driver.substring(0, 2).toUpperCase() : 'DR'
-    
+
     const getFactura = (row) => row.Factura || row.factura || row.Invoice || row.invoice || row.Folio_Liquidacion || row.folio_liquidacion || row.bill || row.Bill || ''
     const getCoordenada = (row) => row.Coordenada || row.coordenada || row.Coordinate || row.coordinate || ''
 
@@ -201,7 +217,7 @@ export default function BoletaCard({ trip, onUpdate, dieselPrice, unitYields = {
 
     return (
         <div className="bg-white border border-slate-200 rounded-xl overflow-hidden mb-6 shadow-sm">
-            
+
             {/* ── 1. Header (Compact) ── */}
             <div className="px-4 py-3 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
                 <div className="flex items-center gap-3">
@@ -243,7 +259,7 @@ export default function BoletaCard({ trip, onUpdate, dieselPrice, unitYields = {
                         <label className="flex items-center gap-1.5 cursor-pointer group" title={trip.Status === 'APPROVED' ? 'Quitar aprobación' : 'Marcar como aprobada'}>
                             <div className="relative flex items-center">
                                 <input type="checkbox" checked={trip.Status === 'APPROVED'} onChange={toggleStatus} className="peer sr-only" />
-                                <div className="w-7 h-4 bg-red-400 rounded-full peer peer-focus:ring-1 peer-focus:ring-emerald-500 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-emerald-500"></div>
+                                <div className="w-7 h-4 bg-slate-300 rounded-full peer peer-focus:ring-1 peer-focus:ring-emerald-500 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-emerald-500"></div>
                             </div>
                             <span className="text-[10px] font-semibold text-slate-400 group-hover:text-slate-600 transition-colors select-none">
                                 {trip.Status === 'APPROVED' ? 'Aprobada' : 'Aprobar'}
@@ -256,7 +272,7 @@ export default function BoletaCard({ trip, onUpdate, dieselPrice, unitYields = {
             {/* ── 2. Finance & KPI Panel (Compact) ── */}
             <div className="px-4 py-3 border-b border-slate-100 bg-white">
                 <div className="flex flex-col md:flex-row gap-4 items-center">
-                    
+
                     {/* Financial Summary */}
                     <div className="flex-1 flex flex-wrap md:flex-nowrap gap-2 w-full">
                         <div className="flex-1 bg-slate-50 border border-slate-100 rounded-lg p-2.5 flex flex-col justify-center min-w-[100px]">
@@ -302,7 +318,7 @@ export default function BoletaCard({ trip, onUpdate, dieselPrice, unitYields = {
                 <div className="mt-3 pt-3 border-t border-slate-100">
                     <div className="flex flex-wrap gap-2">
                         <ToggleSwitch checked={bonoQuimico} onChange={setBonoQuimico} label="Químico" amountLabel="+$250" />
-                        
+
                         {trip.Is_Pacifico && (
                             <>
                                 <ToggleSwitch checked={bonoSierra} onChange={setBonoSierra} label="Sierra" amountLabel="+$500" />
@@ -330,7 +346,7 @@ export default function BoletaCard({ trip, onUpdate, dieselPrice, unitYields = {
                     </div>
 
                     <div className="overflow-x-auto">
-                        <table className="w-full text-left border-collapse">
+                        <table className="w-full min-w-[520px] text-left border-collapse">
                             <thead>
                                 <tr className="border-y border-slate-200 bg-slate-100">
                                     <th className="px-4 py-1.5 text-[9px] font-bold text-slate-500 uppercase w-10">#</th>
@@ -344,7 +360,7 @@ export default function BoletaCard({ trip, onUpdate, dieselPrice, unitYields = {
                                     const isExpanded = expandedRows.has(i);
                                     return (
                                         <React.Fragment key={i}>
-                                            <tr 
+                                            <tr
                                                 className={`cursor-pointer transition-colors ${isExpanded ? 'bg-blue-50/40' : 'hover:bg-slate-50'}`}
                                                 onClick={() => toggleRow(i)}
                                             >
@@ -381,15 +397,15 @@ export default function BoletaCard({ trip, onUpdate, dieselPrice, unitYields = {
                                                             <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3">
                                                                 <div className="space-y-1">
                                                                     <label className="text-[9px] font-bold text-slate-500 uppercase ml-0.5">KMS</label>
-                                                                    <input type="number" value={rowsData[i]?.Kms || ''} onChange={(e) => handleRowFieldChange(i, 'Kms', parseFloat(e.target.value) || 0)} className="w-full bg-white border border-slate-200 rounded px-2 py-1 text-xs font-mono shadow-sm focus:ring-1 focus:ring-blue-500 outline-none" />
+                                                                    <input type="number" min="0" value={rowsData[i]?.Kms || ''} onChange={(e) => handleRowFieldChange(i, 'Kms', parseFloat(e.target.value) || 0)} className="w-full bg-white border border-slate-200 rounded px-2 py-1 text-xs font-mono shadow-sm focus:ring-1 focus:ring-blue-500 outline-none" />
                                                                 </div>
                                                                 <div className="space-y-1">
-                                                                    <label className="text-[9px] font-bold text-amber-600 uppercase ml-0.5">Recarga</label>
-                                                                    <input type="number" step="0.01" value={rowsData[i]?.Recarga || ''} onChange={(e) => handleRowFieldChange(i, 'Recarga', parseFloat(e.target.value) || 0)} className="w-full bg-amber-50 border border-amber-200 rounded px-2 py-1 text-xs font-mono shadow-sm focus:ring-1 focus:ring-amber-500 outline-none" />
+                                                                    <label className="text-[9px] font-bold text-amber-600 uppercase ml-0.5" title="Litros de combustible recargados en este trayecto">Recarga <span className="text-slate-400 normal-case font-normal">(L)</span></label>
+                                                                    <input type="number" step="0.01" min="0" value={rowsData[i]?.Recarga || ''} onChange={(e) => handleRowFieldChange(i, 'Recarga', parseFloat(e.target.value) || 0)} className="w-full bg-amber-50 border border-amber-200 rounded px-2 py-1 text-xs font-mono shadow-sm focus:ring-1 focus:ring-amber-500 outline-none" />
                                                                 </div>
                                                                 <div className="space-y-1">
                                                                     <label className="text-[9px] font-bold text-amber-600 uppercase ml-0.5">Peso Carga</label>
-                                                                    <input type="number" value={rowsData[i]?.Peso_Carga || ''} onChange={(e) => handleRowFieldChange(i, 'Peso_Carga', parseFloat(e.target.value) || 0)} className="w-full bg-amber-50 border border-amber-200 rounded px-2 py-1 text-xs font-mono shadow-sm focus:ring-1 focus:ring-amber-500 outline-none" />
+                                                                    <input type="number" min="0" value={rowsData[i]?.Peso_Carga || ''} onChange={(e) => handleRowFieldChange(i, 'Peso_Carga', parseFloat(e.target.value) || 0)} className="w-full bg-amber-50 border border-amber-200 rounded px-2 py-1 text-xs font-mono shadow-sm focus:ring-1 focus:ring-amber-500 outline-none" />
                                                                 </div>
                                                                 <div className="space-y-1">
                                                                     <label className="text-[9px] font-bold text-slate-500 uppercase ml-0.5">Tipo</label>
@@ -423,9 +439,31 @@ export default function BoletaCard({ trip, onUpdate, dieselPrice, unitYields = {
             )}
 
             {/* ── 4. Bottom Actions ── */}
-            <div className="px-4 py-3 bg-slate-50 border-t border-slate-200 flex justify-end">
-                <button onClick={handleSave} className="w-full md:w-auto px-6 py-2 text-xs font-bold text-white bg-slate-900 rounded-lg hover:bg-slate-800 transition-all shadow-sm flex items-center justify-center gap-1.5 active:scale-95">
-                    <i className="fas fa-save"></i> Guardar y Recalcular
+            <div className="px-4 py-3 bg-slate-50 border-t border-slate-200 flex justify-end items-center">
+                {isDirty && (
+                    <span className="text-[10px] text-amber-600 font-semibold mr-3 flex items-center gap-1">
+                        <i className="fas fa-circle text-[6px] animate-pulse"></i> Cambios sin guardar
+                    </span>
+                )}
+                <button
+                    onClick={handleSave}
+                    disabled={saveStatus === 'saving'}
+                    className={`w-full md:w-auto px-6 py-2 text-xs font-bold text-white rounded-lg transition-all shadow-sm flex items-center justify-center gap-1.5 active:scale-95 disabled:cursor-not-allowed ${
+                        saveStatus === 'ok' ? 'bg-emerald-600 hover:bg-emerald-500' :
+                        saveStatus === 'error' ? 'bg-red-600 hover:bg-red-500' :
+                        saveStatus === 'saving' ? 'bg-slate-600' :
+                        'bg-slate-900 hover:bg-slate-800'
+                    }`}
+                >
+                    {saveStatus === 'saving' ? (
+                        <><i className="fas fa-spinner fa-spin"></i> Guardando...</>
+                    ) : saveStatus === 'ok' ? (
+                        <><i className="fas fa-check"></i> Guardado</>
+                    ) : saveStatus === 'error' ? (
+                        <><i className="fas fa-times"></i> Error al guardar</>
+                    ) : (
+                        <><i className="fas fa-save"></i> Guardar y Recalcular</>
+                    )}
                 </button>
             </div>
 
