@@ -5,7 +5,7 @@ import SummaryBar from './components/SummaryBar'
 import PeriodSelector from './components/PeriodSelector'
 import DashboardKPIs from './components/DashboardKPIs'
 import AdminSection from './components/AdminSection'
-import { buildApiUrl, fetchRendimientos, loadPendingSession, restorePendingSession, savePendingSession } from './api'
+import { buildApiUrl, fetchRendimientos } from './api'
 
 function App() {
   const isAdminView = window.location.pathname.startsWith('/admin')
@@ -19,42 +19,15 @@ function App() {
   const [activeTab, setActiveTab] = useState('NEEDS_INPUT') // 'NEEDS_INPUT' | 'PENDING' | 'APPROVED'
   const [dieselPrice, setDieselPrice] = useState(24.50)
   const [driverFilter, setDriverFilter] = useState('')
-  const [sessionToken] = useState(() => {
-    const key = 'sotelo_session_token'
-    const existing = localStorage.getItem(key)
-    if (existing) return existing
-    const generated = `${Date.now()}_${Math.random().toString(36).slice(2, 12)}`
-    localStorage.setItem(key, generated)
-    return generated
-  })
-
   useEffect(() => {
-    const init = async () => {
-      try {
-        const [catalogData, sessionData] = await Promise.all([
-          fetchRendimientos(),
-          loadPendingSession(sessionToken),
-        ])
-
+    fetchRendimientos()
+      .then(catalogData => {
         setUnitYields(catalogData.rendimientos || {})
         setDefaultYield(catalogData.default_yield || 2.37341)
-
-        if (sessionData?.session?.datos_boleta_json) {
-          const parsed = JSON.parse(sessionData.session.datos_boleta_json)
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            setTrips(parsed)
-            await restorePendingSession(sessionToken)
-          }
-        }
-      } catch (err) {
-        console.warn('No se pudo inicializar catalogos/sesion:', err)
-      } finally {
-        setCatalogLoading(false)
-      }
-    }
-
-    init()
-  }, [sessionToken])
+      })
+      .catch(err => console.warn('No se pudo cargar catalogos:', err))
+      .finally(() => setCatalogLoading(false))
+  }, [])
 
   // Derive available weeks from trips
   const availableWeeks = useMemo(() => [...new Set(trips.map(t => t.Payroll_Week || 0))].filter(w => w > 0), [trips])
@@ -93,19 +66,15 @@ function App() {
     try {
       const res = await fetch(buildApiUrl('/api/upload'), {
         method: 'POST',
-        headers: { 'X-Session-Token': sessionToken },
         body: formData
       })
       const data = await res.json()
-      // console.log("DEBUG: API Response:", data)
       if (!data.trips || data.trips.length === 0) {
         alert(data.detail || "Advertencia: El backend devolvió 0 viajes. Asegúrese de que el archivo tenga datos válidos.");
         setLoading(false);
         return;
       }
       setTrips(data.trips)
-      const semanaNomina = data?.trips?.[0]?.Payroll_Week || null
-      await savePendingSession(sessionToken, data.trips, semanaNomina)
     } catch (err) {
       alert("Error al subir el archivo: " + err.message)
     } finally {

@@ -18,32 +18,6 @@ export async function fetchRutas(params = {}) {
   return res.json()
 }
 
-export async function savePendingSession(token, trips, semanaNomina = null) {
-  const res = await fetch(buildApiUrl('/api/sessions/save'), {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ token, trips, semana_nomina: semanaNomina }),
-  })
-  if (!res.ok) throw new Error('No se pudo guardar sesion pendiente')
-  return res.json()
-}
-
-export async function loadPendingSession(token) {
-  const res = await fetch(buildApiUrl(`/api/sessions/pending?token=${encodeURIComponent(token)}`))
-  if (!res.ok) throw new Error('No se pudo consultar sesion pendiente')
-  return res.json()
-}
-
-export async function restorePendingSession(token) {
-  const res = await fetch(buildApiUrl('/api/sessions/restore'), {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ token }),
-  })
-  if (!res.ok) throw new Error('No se pudo marcar sesion como restaurada')
-  return res.json()
-}
-
 async function adminRequest(path, options = {}) {
   const res = await fetch(buildApiUrl(`/api/admin/${path}`), {
     headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },

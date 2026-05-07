@@ -26,10 +26,6 @@ $routes->group('api', static function (RouteCollection $routes): void {
 	$routes->post('tabulador/desactivar', 'TabuladorController::desactivar');
 	$routes->delete('tabulador/version/(:num)', 'TabuladorController::eliminarVersion/$1');
 
-	$routes->get('sessions/pending', 'SessionController::pending');
-	$routes->post('sessions/save', 'SessionController::save');
-	$routes->post('sessions/restore', 'SessionController::restore');
-
 	$routes->group('admin', static function (RouteCollection $routes): void {
 		$routes->get('unidades', 'Admin\\UnidadesController::index');
 		$routes->get('unidades/(:num)', 'Admin\\UnidadesController::show/$1');

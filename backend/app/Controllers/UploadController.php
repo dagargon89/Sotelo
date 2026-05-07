@@ -8,7 +8,6 @@ use App\Libraries\CsvParser;
 use App\Libraries\PacificoDetector;
 use App\Libraries\RouteResolver;
 use App\Models\AuditLogModel;
-use App\Models\LiquidacionModel;
 use App\Models\UnidadModel;
 
 class UploadController extends BaseController
@@ -79,17 +78,6 @@ class UploadController extends BaseController
                 'ip_address' => $this->request->getIPAddress(),
                 'created_at' => date('Y-m-d H:i:s'),
             ]);
-
-            $token = (string) $this->request->getHeaderLine('X-Session-Token');
-            if ($token !== '') {
-                $liquidacionModel = new LiquidacionModel();
-                $liquidacionModel->insert([
-                    'session_token' => $token,
-                    'datos_boleta_json' => json_encode($results, JSON_UNESCAPED_UNICODE),
-                    'status' => 'PENDING',
-                    'semana_nomina' => null,
-                ]);
-            }
 
             return $this->response->setJSON(['trips' => $results]);
         } catch (\Throwable $e) {
