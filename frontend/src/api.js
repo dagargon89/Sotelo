@@ -60,7 +60,6 @@ export const adminApi = {
   deleteTabulador: (id) => adminRequest(`tabulador/${id}`, { method: 'DELETE' }),
 
   listAuditLogs: (params = '') => adminRequest(`audit-logs${params ? `?${params}` : ''}`),
-  listLiquidaciones: (params = '') => adminRequest(`liquidaciones${params ? `?${params}` : ''}`),
 }
 
 // ── Funciones del tabulador de tarifas (cruces) ─────────────────────────────

@@ -52,8 +52,5 @@ $routes->group('api', static function (RouteCollection $routes): void {
 		$routes->delete('tabulador/(:num)', 'Admin\\TabuladorAdminController::delete/$1');
 
 		$routes->get('audit-logs', 'Admin\\AuditController::index');
-
-		$routes->get('liquidaciones', 'Admin\\LiquidacionesController::index');
-		$routes->get('liquidaciones/(:num)', 'Admin\\LiquidacionesController::show/$1');
 	});
 });

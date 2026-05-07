@@ -9,7 +9,7 @@ const NewBadge = () => SHOW_NEW_BADGES ? (
   </span>
 ) : null
 
-const TABS = ['unidades', 'rutas', 'keywords', 'tabulador', 'audit', 'liquidaciones']
+const TABS = ['unidades', 'rutas', 'keywords', 'tabulador', 'audit']
 
 /**
  * Tarjeta de versión del tabulador con acciones inline de confirm.
@@ -578,7 +578,6 @@ function AdminSection() {
       case 'keywords': return 'Keywords Pacifico'
       case 'tabulador': return 'Tabulador Tarifas'
       case 'audit': return 'Audit Logs'
-      case 'liquidaciones': return 'Liquidaciones Temporales'
       default: return 'Administracion'
     }
   }, [tab])
@@ -598,7 +597,6 @@ function AdminSection() {
         setTabVersiones(ver.versiones ?? [])
       }
       if (tab === 'audit') result = await adminApi.listAuditLogs('limit=200')
-      if (tab === 'liquidaciones') result = await adminApi.listLiquidaciones('limit=200')
       setRows(result?.data || [])
     } catch (err) {
       setError(err.message)
