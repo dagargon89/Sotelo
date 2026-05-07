@@ -1,0 +1,80 @@
+import React from 'react';
+
+const fmt = (n) => `$${parseFloat(n || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const initials = (name) => name ? name.substring(0, 2).toUpperCase() : 'DR';
+
+export default function Sidebar({ grouped, selectedDriver, onSelectDriver, activeTab, onTabChange, search, onSearchChange, selectedWeek }) {
+  return (
+    <aside className="sidebar">
+      <div className="sidebar-head">
+        <div className="sidebar-head-top">
+          <span className="sidebar-title">Conductores</span>
+          <span className="week-badge-sm">Sem. {selectedWeek}</span>
+        </div>
+        <div className="sidebar-search">
+          <span className="sidebar-search-icon">🔍</span>
+          <input
+            className="sidebar-search-input"
+            type="text"
+            placeholder="Buscar conductor…"
+            value={search}
+            onChange={e => onSearchChange(e.target.value)}
+          />
+        </div>
+      </div>
+
+      <div className="sidebar-tabs">
+        {[
+          { id: 'ALL',         label: 'Todos',    cls: '' },
+          { id: 'NEEDS_INPUT', label: 'Pendiente', cls: 't-needs' },
+          { id: 'APPROVED',    label: 'Aprobado',  cls: 't-ok' },
+        ].map(({ id, label, cls }) => (
+          <button
+            key={id}
+            className={`sidebar-tab ${activeTab === id ? `active ${cls}` : ''}`}
+            onClick={() => onTabChange(id)}
+          >{label}</button>
+        ))}
+      </div>
+
+      <div className="sidebar-list">
+        {grouped.length === 0 && (
+          <div style={{ textAlign: 'center', padding: '32px 0', color: 'var(--ink-4)', fontSize: 13 }}>
+            Sin resultados
+          </div>
+        )}
+        {grouped.map(([driverName, trips]) => {
+          const total = trips.reduce((s, t) => s + parseFloat(t.Total_Pay || 0), 0)
+          const approved = trips.filter(t => t.Status === 'APPROVED').length
+          const needs    = trips.filter(t => t.Status === 'NEEDS_INPUT').length
+          const progress = trips.length > 0 ? (approved / trips.length) * 100 : 0
+          const isSelected = selectedDriver === driverName
+          const hasNeeds   = needs > 0
+
+          return (
+            <div
+              key={driverName}
+              className={`driver-row ${isSelected ? 'selected' : ''} ${hasNeeds ? 'has-needs' : ''}`}
+              onClick={() => onSelectDriver(driverName)}
+            >
+              <div className="driver-avatar">{initials(driverName)}</div>
+              <div className="driver-row-info">
+                <div className="dr-name">{driverName || 'Sin Nombre'}</div>
+                <div className="dr-meta">
+                  {trips.length} viajes • {approved} aprobados
+                </div>
+                <div className="dr-progress">
+                  <div className="dr-bar" style={{ width: `${progress}%` }}></div>
+                </div>
+              </div>
+              <div className="driver-row-right">
+                <div className="dr-total">{fmt(total)}</div>
+                {hasNeeds && <div className="dr-dot"></div>}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </aside>
+  )
+}
