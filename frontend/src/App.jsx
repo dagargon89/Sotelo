@@ -97,23 +97,24 @@ function App() {
 
   return (
     <>
-      {/* Topbar V2 */}
+      {/* Topbar */}
       <header className="topbar">
-        <div className="topbar-wordmark">Dataholics<span className="text-blue-400">Nómina</span></div>
+        <div className="topbar-wordmark">Sotelo <em>Nómina</em></div>
         <div className="topbar-sep"></div>
-        <div className="topbar-tag">v2.0</div>
+        <span className="topbar-tag">v1.1 · Control Financiero</span>
         <div className="topbar-spacer"></div>
-        
+
         {selectedWeek && (
-          <div className="week-pill" onClick={() => setSelectedWeek(null)} style={{ cursor: 'pointer' }}>
-            <span className="week-pill-label">Semana {selectedWeek}</span>
-            <span className="week-pill-change">Cambiar</span>
+          <div className="week-pill">
+            <span className="week-pill-label">Semana</span>
+            {selectedWeek}
+            <button className="week-pill-change" onClick={() => setSelectedWeek(null)}>Cambiar</button>
           </div>
         )}
-        
-        <div className="topbar-nav">
-          <a href="/admin">Administración</a>
-        </div>
+
+        <nav className="topbar-nav">
+          <a href="/admin" className="topbar-nav-link">Administración</a>
+        </nav>
       </header>
 
       {trips.length === 0 ? (
@@ -140,9 +141,8 @@ function App() {
           <div className="detail-panel">
             {!selectedDriver ? (
               <div className="empty-detail">
-                <div className="ed-icon">👋</div>
-                <div className="ed-title">Selecciona un conductor</div>
-                <div className="ed-sub">Elige un conductor del panel lateral para revisar o capturar sus boletas.</div>
+                <div className="empty-detail-icon">👈</div>
+                <div className="empty-detail-text">Selecciona un conductor para ver sus boletas</div>
               </div>
             ) : (
               <>
@@ -166,7 +166,7 @@ function App() {
       )}
 
       {catalogLoading && (
-        <div className="fixed bottom-4 right-4 bg-slate-900 text-white text-xs px-3 py-2 rounded-lg shadow z-50">
+        <div className="catalog-loading-toast">
           Cargando catalogos...
         </div>
       )}

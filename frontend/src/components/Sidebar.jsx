@@ -44,7 +44,7 @@ export default function Sidebar({ grouped, selectedDriver, onSelectDriver, activ
           </div>
         )}
         {grouped.map(([driverName, trips]) => {
-          const total = trips.reduce((s, t) => s + parseFloat(t.Total_Pay || 0), 0)
+          const total    = trips.reduce((s, t) => s + parseFloat(t.Total_Pay || 0), 0)
           const approved = trips.filter(t => t.Status === 'APPROVED').length
           const needs    = trips.filter(t => t.Status === 'NEEDS_INPUT').length
           const progress = trips.length > 0 ? (approved / trips.length) * 100 : 0
@@ -59,17 +59,22 @@ export default function Sidebar({ grouped, selectedDriver, onSelectDriver, activ
             >
               <div className="driver-avatar">{initials(driverName)}</div>
               <div className="driver-row-info">
-                <div className="dr-name">{driverName || 'Sin Nombre'}</div>
-                <div className="dr-meta">
-                  {trips.length} viajes • {approved} aprobados
+                <div className="driver-row-name">{driverName}</div>
+                <div className="driver-row-meta">
+                  <span className="dr-badge dr-badge-boletas">{trips.length} boletas</span>
+                  {needs > 0    && <span className="dr-badge dr-badge-needs">⚠ {needs}</span>}
+                  {approved > 0 && <span className="dr-badge dr-badge-ok">✓ {approved}</span>}
                 </div>
-                <div className="dr-progress">
-                  <div className="dr-bar" style={{ width: `${progress}%` }}></div>
+                <div className="driver-progress">
+                  <div
+                    className={`driver-progress-fill ${progress === 0 ? 'zero' : ''}`}
+                    style={{ width: `${progress}%` }}
+                  ></div>
                 </div>
               </div>
-              <div className="driver-row-right">
-                <div className="dr-total">{fmt(total)}</div>
-                {hasNeeds && <div className="dr-dot"></div>}
+              <div className="driver-row-total">
+                <span className="driver-row-total-val">{fmt(total)}</span>
+                <span className="driver-row-total-label">total</span>
               </div>
             </div>
           )

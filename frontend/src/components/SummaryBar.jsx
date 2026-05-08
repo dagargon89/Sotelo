@@ -27,28 +27,24 @@ export default function SummaryBar({ trips, selectedWeek }) {
     <div className="sum-bar">
       <div className="sum-bar-inner">
         <div className="sum-metrics">
-          <div>
+          <div className="sum-item">
             <div className="sum-lbl">Total Base</div>
-            <div className="sum-val">{fmt(t.base)}</div>
+            <div className="sum-val muted">{fmt(t.base)}</div>
           </div>
-          <div>
-            <div className="sum-lbl">Cruce</div>
-            <div className="sum-val muted">{fmt(t.cruce)}</div>
-          </div>
-          <div>
-            <div className="sum-lbl">Incentivo</div>
+          <div className="sum-item">
+            <div className="sum-lbl">Incentivos</div>
             <div className="sum-val copper">{fmt(t.incentive)}</div>
           </div>
-          <div className="sum-sep"></div>
-          <div>
+          <div className="sum-divider"></div>
+          <div className="sum-item">
             <div className="sum-lbl">Cruces</div>
-            <div className="sum-val muted">{t.cruces}</div>
+            <div className="sum-val">{t.cruces}</div>
           </div>
-          <div>
+          <div className="sum-item">
             <div className="sum-lbl">Locales</div>
-            <div className="sum-val muted">{t.locales}</div>
+            <div className="sum-val">{t.locales}</div>
           </div>
-          <div>
+          <div className="sum-item">
             <div className="sum-lbl">PTT</div>
             <div className="sum-val muted">{t.ptt}</div>
           </div>
