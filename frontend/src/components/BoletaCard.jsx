@@ -273,7 +273,16 @@ function BoletaDetail({ trip, onUpdate, dieselPrice, unitYields, defaultYield })
         })
         const data = await res.json()
         if (data.trips && data.trips.length > 0) {
-            onUpdate(data.trips[0])
+            const t = data.trips[0]
+            onUpdate(t)
+            // Sync local state from API response so displayed calculations stay correct
+            setRowsData((t.Rows || []).map(r => ({ ...r })))
+            setBonoQuimico(t.Manual_Bono_Quimico ?? false)
+            setPacLoaded(t.Manual_Pac_Loaded ?? true)
+            setBonoSierra(t.Manual_Pac_Bono_Sierra ?? false)
+            setBonoDoble(t.Manual_Pac_Bono_Doble ?? false)
+            setEstObregon(t.Manual_Pac_Estancia_Obregon ?? 0)
+            setEstMochis(t.Manual_Pac_Estancia_Mochis ?? 0)
         }
     } catch (err) {
         alert('Error al guardar: ' + err.message)
@@ -421,9 +430,15 @@ export default function BoletaCard({ trip, index, isOpen, onToggle, onUpdate, di
   const openClass = isOpen ? 'open' : ''
   const fmt = (n) => `$${parseFloat(n || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
 
+  const handleToggleApprove = (e) => {
+    e.stopPropagation()
+    const newStatus = trip.Status === 'APPROVED' ? 'PENDING' : 'APPROVED'
+    onUpdate({ ...trip, Status: newStatus })
+  }
+
   return (
     <div className="boleta-card">
-      <button className={`boleta-trigger ${needsCls} ${openClass}`} onClick={onToggle}>
+      <div className={`boleta-trigger ${needsCls} ${openClass}`} onClick={onToggle} role="button" tabIndex={0} onKeyDown={e => e.key === 'Enter' && onToggle()}>
         <span className="bt-num">{index + 1}</span>
         <div className="bt-info">
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
@@ -434,10 +449,17 @@ export default function BoletaCard({ trip, index, isOpen, onToggle, onUpdate, di
         </div>
         <div className="bt-controls">
           <SBadge status={trip.Status} />
+          <button
+            className={`card-approve-btn ${trip.Status === 'APPROVED' ? 'on' : ''}`}
+            onClick={handleToggleApprove}
+            title={trip.Status === 'APPROVED' ? 'Quitar aprobación' : 'Aprobar boleta'}
+          >
+            {trip.Status === 'APPROVED' ? '✓' : '○'}
+          </button>
           <span className="bt-total">{fmt(trip.Total_Pay)}</span>
           <span className="bt-chevron">{isOpen ? '▲' : '▼'}</span>
         </div>
-      </button>
+      </div>
 
       {isOpen && (
         <BoletaDetail

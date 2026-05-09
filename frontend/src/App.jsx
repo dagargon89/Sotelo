@@ -63,10 +63,11 @@ function App() {
     }
   }
 
-  const handleRecalculate = async (updatedTrips) => {
-    const updatedIds = new Set(updatedTrips.map(t => t.id))
-    const newTrips = trips.map(t => updatedIds.has(t.id) ? updatedTrips.find(ut => ut.id === t.id) : t)
-    setTrips(newTrips)
+  const handleRecalculate = (updatedTrips) => {
+    setTrips(prev => {
+      const updatedIds = new Set(updatedTrips.map(t => t.id))
+      return prev.map(t => updatedIds.has(t.id) ? updatedTrips.find(ut => ut.id === t.id) : t)
+    })
   }
 
   const groupedTrips = useMemo(() => {
@@ -76,14 +77,22 @@ function App() {
       if (!map.has(d)) map.set(d, [])
       map.get(d).push(t)
     })
-    
+
     let entries = Array.from(map.entries())
-    if (activeTab === 'NEEDS_INPUT') entries = entries.filter(([d, ts]) => ts.some(t => t.Status === 'NEEDS_INPUT'))
-    if (activeTab === 'APPROVED') entries = entries.filter(([d, ts]) => ts.every(t => t.Status === 'APPROVED'))
+    // "Pendiente" = has any non-approved trip; "Aprobado" = has at least one approved
+    if (activeTab === 'NEEDS_INPUT') entries = entries.filter(([, ts]) => ts.some(t => t.Status !== 'APPROVED'))
+    if (activeTab === 'APPROVED')   entries = entries.filter(([, ts]) => ts.some(t => t.Status === 'APPROVED'))
     if (driverFilter) entries = entries.filter(([d]) => d.toLowerCase().includes(driverFilter.toLowerCase()))
-    
+
     return entries.sort((a,b) => a[0].localeCompare(b[0]))
   }, [trips, selectedWeek, activeTab, driverFilter])
+
+  // Clear selected driver when they're no longer visible in the current tab filter
+  useEffect(() => {
+    if (selectedDriver && !groupedTrips.some(([d]) => d === selectedDriver)) {
+      setSelectedDriver(null)
+    }
+  }, [groupedTrips, selectedDriver])
 
   // Get current driver's trips
   const currentDriverTrips = useMemo(() => {
