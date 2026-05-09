@@ -94,11 +94,14 @@ function App() {
     }
   }, [groupedTrips, selectedDriver])
 
-  // Get current driver's trips
+  // Get current driver's trips, filtered by active tab
   const currentDriverTrips = useMemo(() => {
     if (!selectedDriver) return []
-    return trips.filter(t => t.Payroll_Week === selectedWeek && (t.Driver || 'Sin Nombre') === selectedDriver)
-  }, [trips, selectedWeek, selectedDriver])
+    let driverTrips = trips.filter(t => t.Payroll_Week === selectedWeek && (t.Driver || 'Sin Nombre') === selectedDriver)
+    if (activeTab === 'NEEDS_INPUT') driverTrips = driverTrips.filter(t => t.Status !== 'APPROVED')
+    if (activeTab === 'APPROVED')   driverTrips = driverTrips.filter(t => t.Status === 'APPROVED')
+    return driverTrips
+  }, [trips, selectedWeek, selectedDriver, activeTab])
 
   if (isAdminView) {
     return <AdminSection />
