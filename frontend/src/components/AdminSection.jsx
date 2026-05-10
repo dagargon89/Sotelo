@@ -783,29 +783,52 @@ export default function AdminSection() {
                     <div style={{ fontSize:13, fontWeight:700, color:'var(--ink-1)' }}>Importar Tabulador desde CSV</div>
                     <div style={{ fontSize:11, color:'var(--ink-4)', marginTop:3 }}>Columnas: tipo, cruce, origen, destino, pago_operador, prioridad</div>
                   </div>
-                  <label style={{
-                    display:'inline-flex', alignItems:'center', gap:7,
-                    background:'var(--blue)', color:'white',
-                    padding:'9px 18px', borderRadius:'var(--r-lg)',
-                    fontSize:12, fontWeight:700, cursor:'pointer',
-                    boxShadow:'0 2px 8px rgba(59,130,246,.25)',
-                  }}>
-                    📤 Seleccionar CSV
-                    <input type="file" accept=".csv" style={{ display:'none' }} onChange={e => {
-                      const file = e.target.files[0]
-                      if (!file) return
-                      setTabUploadFile(file)
-                      setTabUploadResult(null)
-                      const reader = new FileReader()
-                      reader.onload = ev => {
-                        const lines = ev.target.result.split('\n').filter(l => l.trim())
-                        const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''))
-                        const dataRows = lines.slice(1, 51).map(line => line.split(',').map(c => c.trim().replace(/^"|"$/g, '')))
-                        setTabCsvPreview({ headers, rows: dataRows, total: lines.length - 1, file })
-                      }
-                      reader.readAsText(file)
-                    }} />
-                  </label>
+                  <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
+                    <button
+                      onClick={() => {
+                        const header = 'tipo,cruce,origen,destino,pago_operador,prioridad'
+                        const example = 'LOCAL,,Ciudad A,Ciudad B,1500.00,1\nCRUCE,Puente Norte,Ciudad C,Ciudad D,2800.50,2'
+                        const blob = new Blob([header + '\n' + example], { type: 'text/csv;charset=utf-8;' })
+                        const url = URL.createObjectURL(blob)
+                        const a = document.createElement('a')
+                        a.href = url; a.download = 'plantilla_tabulador.csv'
+                        a.click(); URL.revokeObjectURL(url)
+                      }}
+                      style={{
+                        display:'inline-flex', alignItems:'center', gap:7,
+                        background:'var(--surface)', color:'var(--ink-2)',
+                        border:'1px solid var(--border)', padding:'9px 16px',
+                        borderRadius:'var(--r-lg)', fontSize:12, fontWeight:700, cursor:'pointer',
+                        whiteSpace:'nowrap',
+                      }}
+                    >
+                      ⬇ Descargar Plantilla
+                    </button>
+                    <label style={{
+                      display:'inline-flex', alignItems:'center', gap:7,
+                      background:'var(--blue)', color:'white',
+                      padding:'9px 18px', borderRadius:'var(--r-lg)',
+                      fontSize:12, fontWeight:700, cursor:'pointer',
+                      boxShadow:'0 2px 8px rgba(59,130,246,.25)',
+                      whiteSpace:'nowrap',
+                    }}>
+                      📤 Seleccionar CSV
+                      <input type="file" accept=".csv" style={{ display:'none' }} onChange={e => {
+                        const file = e.target.files[0]
+                        if (!file) return
+                        setTabUploadFile(file)
+                        setTabUploadResult(null)
+                        const reader = new FileReader()
+                        reader.onload = ev => {
+                          const lines = ev.target.result.split('\n').filter(l => l.trim())
+                          const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''))
+                          const dataRows = lines.slice(1, 51).map(line => line.split(',').map(c => c.trim().replace(/^"|"$/g, '')))
+                          setTabCsvPreview({ headers, rows: dataRows, total: lines.length - 1, file })
+                        }
+                        reader.readAsText(file)
+                      }} />
+                    </label>
+                  </div>
                 </div>
 
                 {tabUploadResult && (
