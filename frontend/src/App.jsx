@@ -79,7 +79,8 @@ function App() {
     })
 
     let entries = Array.from(map.entries())
-    // "Pendiente" = has any non-approved trip; "Aprobado" = has at least one approved
+    // Cada pestaña es exclusiva por status
+    if (activeTab === 'ALL')         entries = entries.filter(([, ts]) => ts.some(t => t.Status === 'NEEDS_INPUT'))
     if (activeTab === 'NEEDS_INPUT') entries = entries.filter(([, ts]) => ts.some(t => t.Status === 'PENDING'))
     if (activeTab === 'APPROVED')   entries = entries.filter(([, ts]) => ts.some(t => t.Status === 'APPROVED'))
     if (driverFilter) entries = entries.filter(([d]) => d.toLowerCase().includes(driverFilter.toLowerCase()))
@@ -98,7 +99,7 @@ function App() {
     })
     const allEntries = Array.from(map.entries())
     return {
-      ALL:         weekTrips.length,
+      ALL:         weekTrips.filter(t => t.Status === 'NEEDS_INPUT').length,
       NEEDS_INPUT: weekTrips.filter(t => t.Status === 'PENDING').length,
       APPROVED:    weekTrips.filter(t => t.Status === 'APPROVED').length,
     }
@@ -115,6 +116,7 @@ function App() {
   const currentDriverTrips = useMemo(() => {
     if (!selectedDriver) return []
     let driverTrips = trips.filter(t => t.Payroll_Week === selectedWeek && (t.Driver || 'Sin Nombre') === selectedDriver)
+    if (activeTab === 'ALL')         driverTrips = driverTrips.filter(t => t.Status === 'NEEDS_INPUT')
     if (activeTab === 'NEEDS_INPUT') driverTrips = driverTrips.filter(t => t.Status === 'PENDING')
     if (activeTab === 'APPROVED')   driverTrips = driverTrips.filter(t => t.Status === 'APPROVED')
     return driverTrips
