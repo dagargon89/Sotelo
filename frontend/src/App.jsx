@@ -203,12 +203,17 @@ function App() {
         </div>
       )}
 
-      {selectedWeek && trips.length > 0 && (
-        <SummaryBar
-          trips={trips.filter(t => t.Payroll_Week === selectedWeek)}
-          selectedWeek={selectedWeek}
-        />
-      )}
+      {selectedWeek && trips.length > 0 && (() => {
+        const weekTrips = trips.filter(t => t.Payroll_Week === selectedWeek)
+        const statusMap = { ALL: 'NEEDS_INPUT', NEEDS_INPUT: 'PENDING', APPROVED: 'APPROVED' }
+        const filteredTrips = weekTrips.filter(t => t.Status === statusMap[activeTab])
+        return (
+          <SummaryBar
+            trips={filteredTrips}
+            selectedWeek={selectedWeek}
+          />
+        )
+      })()}
     </>
   )
 }
