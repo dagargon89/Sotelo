@@ -3,7 +3,9 @@ import React from 'react';
 const fmt = (n) => `$${parseFloat(n || 0).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const initials = (name) => name ? name.substring(0, 2).toUpperCase() : 'DR';
 
-export default function Sidebar({ grouped, selectedDriver, onSelectDriver, activeTab, onTabChange, search, onSearchChange, selectedWeek }) {
+export default function Sidebar({ grouped, selectedDriver, onSelectDriver, activeTab, onTabChange, search, onSearchChange, selectedWeek, tabCounts = {} }) {
+  const counts = { ALL: 0, NEEDS_INPUT: 0, APPROVED: 0, ...tabCounts }
+
   return (
     <aside className="sidebar">
       <div className="sidebar-head">
@@ -25,9 +27,9 @@ export default function Sidebar({ grouped, selectedDriver, onSelectDriver, activ
 
       <div className="sidebar-tabs">
         {[
-          { id: 'ALL',         label: 'Todos',    cls: '' },
-          { id: 'NEEDS_INPUT', label: 'Pendiente', cls: 't-needs' },
-          { id: 'APPROVED',    label: 'Aprobado',  cls: 't-ok' },
+          { id: 'ALL',         label: `Requiere Captura (${counts.ALL})`,         cls: '' },
+          { id: 'NEEDS_INPUT', label: `Pendiente (${counts.NEEDS_INPUT})`,         cls: 't-needs' },
+          { id: 'APPROVED',    label: `Aprobado (${counts.APPROVED})`,             cls: 't-ok' },
         ].map(({ id, label, cls }) => (
           <button
             key={id}

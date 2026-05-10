@@ -80,12 +80,29 @@ function App() {
 
     let entries = Array.from(map.entries())
     // "Pendiente" = has any non-approved trip; "Aprobado" = has at least one approved
-    if (activeTab === 'NEEDS_INPUT') entries = entries.filter(([, ts]) => ts.some(t => t.Status !== 'APPROVED'))
+    if (activeTab === 'NEEDS_INPUT') entries = entries.filter(([, ts]) => ts.some(t => t.Status === 'PENDING'))
     if (activeTab === 'APPROVED')   entries = entries.filter(([, ts]) => ts.some(t => t.Status === 'APPROVED'))
     if (driverFilter) entries = entries.filter(([d]) => d.toLowerCase().includes(driverFilter.toLowerCase()))
 
     return entries.sort((a,b) => a[0].localeCompare(b[0]))
   }, [trips, selectedWeek, activeTab, driverFilter])
+
+  // Conteos por pestaña (sin filtro de pestaña activa ni búsqueda)
+  const tabCounts = useMemo(() => {
+    const weekTrips = trips.filter(t => t.Payroll_Week === selectedWeek)
+    const map = new Map()
+    weekTrips.forEach(t => {
+      const d = t.Driver || 'Sin Nombre'
+      if (!map.has(d)) map.set(d, [])
+      map.get(d).push(t)
+    })
+    const allEntries = Array.from(map.entries())
+    return {
+      ALL:         weekTrips.length,
+      NEEDS_INPUT: weekTrips.filter(t => t.Status === 'PENDING').length,
+      APPROVED:    weekTrips.filter(t => t.Status === 'APPROVED').length,
+    }
+  }, [trips, selectedWeek])
 
   // Clear selected driver when they're no longer visible in the current tab filter
   useEffect(() => {
@@ -98,7 +115,7 @@ function App() {
   const currentDriverTrips = useMemo(() => {
     if (!selectedDriver) return []
     let driverTrips = trips.filter(t => t.Payroll_Week === selectedWeek && (t.Driver || 'Sin Nombre') === selectedDriver)
-    if (activeTab === 'NEEDS_INPUT') driverTrips = driverTrips.filter(t => t.Status !== 'APPROVED')
+    if (activeTab === 'NEEDS_INPUT') driverTrips = driverTrips.filter(t => t.Status === 'PENDING')
     if (activeTab === 'APPROVED')   driverTrips = driverTrips.filter(t => t.Status === 'APPROVED')
     return driverTrips
   }, [trips, selectedWeek, selectedDriver, activeTab])
@@ -148,6 +165,7 @@ function App() {
             search={driverFilter}
             onSearchChange={setDriverFilter}
             selectedWeek={selectedWeek}
+            tabCounts={tabCounts}
           />
 
           <div className="detail-panel">
