@@ -37,8 +37,9 @@ Sotelo/
 │       │   └── DashboardKPIs.jsx
 │       ├── api.js            # Cliente HTTP
 │       └── App.jsx
-├── api/                      # Archivos PHP legados
-└── assets/                   # Assets compilados
+├── importante/               # Documentación del proyecto (ver importante/README.md)
+├── agents/                   # Definición de agentes de desarrollo
+└── router.php                # Router para servidor embebido de PHP (dev local)
 ```
 
 ---
