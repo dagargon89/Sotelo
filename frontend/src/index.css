@@ -1262,3 +1262,94 @@ a { text-decoration: none; }
   box-shadow: 0 4px 16px oklch(0% 0 0 / .18);
   z-index: 50;
 }
+
+/* ── Login ────────────────────────────────────────────────────────────────── */
+.login-root {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+}
+.login-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  box-shadow: var(--sh-lg);
+  padding: 2.5rem 2rem;
+  width: 100%;
+  max-width: 380px;
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+.login-brand { display: flex; flex-direction: column; gap: .25rem; }
+.login-wordmark {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--primary);
+  letter-spacing: -.02em;
+}
+.login-wordmark em { font-style: normal; font-weight: 300; }
+.login-subtitle { font-size: .8rem; color: var(--ink-3); }
+
+.login-form { display: flex; flex-direction: column; gap: 1rem; }
+.login-field { display: flex; flex-direction: column; gap: .35rem; }
+.login-field label { font-size: .78rem; font-weight: 500; color: var(--ink-2); }
+.login-field input {
+  border: 1px solid var(--border-md);
+  border-radius: var(--r);
+  padding: .55rem .75rem;
+  font-size: .9rem;
+  color: var(--ink-1);
+  background: var(--surface-2);
+  outline: none;
+  transition: border-color .15s;
+}
+.login-field input:focus { border-color: var(--copper); }
+.login-field input:disabled { opacity: .6; }
+
+.login-error {
+  font-size: .8rem;
+  color: var(--red);
+  background: var(--red-bg);
+  border-radius: var(--r-sm);
+  padding: .45rem .7rem;
+}
+.login-btn {
+  margin-top: .25rem;
+  background: var(--primary);
+  color: #fff;
+  border-radius: var(--r);
+  padding: .65rem 1rem;
+  font-size: .9rem;
+  font-weight: 600;
+  transition: opacity .15s;
+}
+.login-btn:hover:not(:disabled) { opacity: .88; }
+.login-btn:disabled { opacity: .45; cursor: not-allowed; }
+
+/* ── Topbar auth ──────────────────────────────────────────────────────────── */
+.topbar-user {
+  font-size: .75rem;
+  color: var(--ink-3);
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.topbar-logout {
+  font-size: .78rem;
+  font-weight: 500;
+  color: var(--ink-2);
+  padding: .3rem .65rem;
+  border: 1px solid var(--border-md);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  transition: background .12s, color .12s;
+}
+.topbar-logout:hover {
+  background: var(--red-bg);
+  color: var(--red);
+  border-color: var(--red);
+}

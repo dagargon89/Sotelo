@@ -6,9 +6,13 @@ import PeriodSelector from './components/PeriodSelector'
 import DashboardKPIs from './components/DashboardKPIs'
 import AdminSection from './components/AdminSection'
 import Sidebar from './components/Sidebar'
-import { buildApiUrl, fetchRendimientos } from './api'
+import { authFetch, fetchRendimientos } from './api'
+import { useAuth } from './auth/AuthContext'
+import LoginPage from './pages/LoginPage'
 
-function App() {
+// ── Contenido principal (todos los hooks aquí, sin returns condicionales previos) ──
+function AppContent() {
+  const { user, logout } = useAuth()
   const isAdminView = window.location.pathname.startsWith('/admin')
 
   const [trips, setTrips] = useState([])
@@ -17,7 +21,7 @@ function App() {
   const [unitYields, setUnitYields] = useState({})
   const [defaultYield, setDefaultYield] = useState(2.37341)
   const [selectedWeek, setSelectedWeek] = useState(null)
-  const [activeTab, setActiveTab] = useState('ALL') // 'ALL' | 'NEEDS_INPUT' | 'APPROVED'
+  const [activeTab, setActiveTab] = useState('ALL')
   const [dieselPrice, setDieselPrice] = useState(24.50)
   const [driverFilter, setDriverFilter] = useState('')
   const [selectedDriver, setSelectedDriver] = useState(null)
@@ -32,32 +36,26 @@ function App() {
       .finally(() => setCatalogLoading(false))
   }, [])
 
-  // Derive available weeks from trips
   const availableWeeks = useMemo(() => [...new Set(trips.map(t => t.Payroll_Week || 0))].filter(w => w > 0), [trips])
 
   const handleFileUpload = async (file) => {
     setLoading(true)
-    setSelectedWeek(null) // Reset selection on new upload
+    setSelectedWeek(null)
     setActiveTab('ALL')
     setDriverFilter('')
     setSelectedDriver(null)
     const formData = new FormData()
     formData.append('file', file)
-
     try {
-      const res = await fetch(buildApiUrl('/api/upload'), {
-        method: 'POST',
-        body: formData
-      })
+      const res = await authFetch('/api/upload', { method: 'POST', body: formData })
       const data = await res.json()
       if (!data.trips || data.trips.length === 0) {
-        alert(data.detail || "Advertencia: El backend devolvió 0 viajes. Asegúrese de que el archivo tenga datos válidos.");
-        setLoading(false);
-        return;
+        alert(data.detail || 'Advertencia: El backend devolvió 0 viajes.')
+        return
       }
       setTrips(data.trips)
     } catch (err) {
-      alert("Error al subir el archivo: " + err.message)
+      alert('Error al subir el archivo: ' + err.message)
     } finally {
       setLoading(false)
     }
@@ -77,27 +75,16 @@ function App() {
       if (!map.has(d)) map.set(d, [])
       map.get(d).push(t)
     })
-
     let entries = Array.from(map.entries())
-    // Cada pestaña es exclusiva por status
     if (activeTab === 'ALL')         entries = entries.filter(([, ts]) => ts.some(t => t.Status === 'NEEDS_INPUT'))
     if (activeTab === 'NEEDS_INPUT') entries = entries.filter(([, ts]) => ts.some(t => t.Status === 'PENDING'))
-    if (activeTab === 'APPROVED')   entries = entries.filter(([, ts]) => ts.some(t => t.Status === 'APPROVED'))
+    if (activeTab === 'APPROVED')    entries = entries.filter(([, ts]) => ts.some(t => t.Status === 'APPROVED'))
     if (driverFilter) entries = entries.filter(([d]) => d.toLowerCase().includes(driverFilter.toLowerCase()))
-
-    return entries.sort((a,b) => a[0].localeCompare(b[0]))
+    return entries.sort((a, b) => a[0].localeCompare(b[0]))
   }, [trips, selectedWeek, activeTab, driverFilter])
 
-  // Conteos por pestaña (sin filtro de pestaña activa ni búsqueda)
   const tabCounts = useMemo(() => {
     const weekTrips = trips.filter(t => t.Payroll_Week === selectedWeek)
-    const map = new Map()
-    weekTrips.forEach(t => {
-      const d = t.Driver || 'Sin Nombre'
-      if (!map.has(d)) map.set(d, [])
-      map.get(d).push(t)
-    })
-    const allEntries = Array.from(map.entries())
     return {
       ALL:         weekTrips.filter(t => t.Status === 'NEEDS_INPUT').length,
       NEEDS_INPUT: weekTrips.filter(t => t.Status === 'PENDING').length,
@@ -105,30 +92,25 @@ function App() {
     }
   }, [trips, selectedWeek])
 
-  // Clear selected driver when they're no longer visible in the current tab filter
   useEffect(() => {
     if (selectedDriver && !groupedTrips.some(([d]) => d === selectedDriver)) {
       setSelectedDriver(null)
     }
   }, [groupedTrips, selectedDriver])
 
-  // Get current driver's trips, filtered by active tab
   const currentDriverTrips = useMemo(() => {
     if (!selectedDriver) return []
     let driverTrips = trips.filter(t => t.Payroll_Week === selectedWeek && (t.Driver || 'Sin Nombre') === selectedDriver)
     if (activeTab === 'ALL')         driverTrips = driverTrips.filter(t => t.Status === 'NEEDS_INPUT')
     if (activeTab === 'NEEDS_INPUT') driverTrips = driverTrips.filter(t => t.Status === 'PENDING')
-    if (activeTab === 'APPROVED')   driverTrips = driverTrips.filter(t => t.Status === 'APPROVED')
+    if (activeTab === 'APPROVED')    driverTrips = driverTrips.filter(t => t.Status === 'APPROVED')
     return driverTrips
   }, [trips, selectedWeek, selectedDriver, activeTab])
 
-  if (isAdminView) {
-    return <AdminSection />
-  }
+  if (isAdminView) return <AdminSection />
 
   return (
     <>
-      {/* Topbar */}
       <header className="topbar">
         <div className="topbar-wordmark">Sotelo <em>Nómina</em></div>
         <div className="topbar-sep"></div>
@@ -145,6 +127,8 @@ function App() {
 
         <nav className="topbar-nav">
           <a href="/admin" className="topbar-nav-link">Administración</a>
+          <span className="topbar-user">{user?.email}</span>
+          <button className="topbar-logout" onClick={logout}>Salir</button>
         </nav>
       </header>
 
@@ -158,7 +142,7 @@ function App() {
         </div>
       ) : (
         <div className="app-shell">
-          <Sidebar 
+          <Sidebar
             grouped={groupedTrips}
             selectedDriver={selectedDriver}
             onSelectDriver={setSelectedDriver}
@@ -169,7 +153,6 @@ function App() {
             selectedWeek={selectedWeek}
             tabCounts={tabCounts}
           />
-
           <div className="detail-panel">
             {!selectedDriver ? (
               <div className="empty-detail">
@@ -197,25 +180,30 @@ function App() {
         </div>
       )}
 
-      {catalogLoading && (
-        <div className="catalog-loading-toast">
-          Cargando catalogos...
-        </div>
-      )}
+      {catalogLoading && <div className="catalog-loading-toast">Cargando catalogos...</div>}
 
       {selectedWeek && trips.length > 0 && (() => {
         const weekTrips = trips.filter(t => t.Payroll_Week === selectedWeek)
         const statusMap = { ALL: 'NEEDS_INPUT', NEEDS_INPUT: 'PENDING', APPROVED: 'APPROVED' }
-        const filteredTrips = weekTrips.filter(t => t.Status === statusMap[activeTab])
-        return (
-          <SummaryBar
-            trips={filteredTrips}
-            selectedWeek={selectedWeek}
-          />
-        )
+        return <SummaryBar trips={weekTrips.filter(t => t.Status === statusMap[activeTab])} selectedWeek={selectedWeek} />
       })()}
     </>
   )
+}
+
+// ── Shell de autenticación (pocos hooks, returns condicionales seguros aquí) ──
+function App() {
+  const { ready, user } = useAuth()
+
+  useEffect(() => {
+    const handler = () => window.location.reload()
+    window.addEventListener('sotelo:logout', handler)
+    return () => window.removeEventListener('sotelo:logout', handler)
+  }, [])
+
+  if (!ready) return <div className="fullscreen-center"><span style={{ color: 'var(--ink-3)' }}>Cargando…</span></div>
+  if (!user)  return <LoginPage />
+  return <AppContent />
 }
 
 export default App
