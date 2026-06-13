@@ -192,3 +192,24 @@ export async function deleteTabuladorVersion(version) {
   if (!res.ok) throw new Error(data?.detail || `Error ${res.status}`)
   return data
 }
+
+// ── API de gestión de usuarios ───────────────────────────────────────────────
+
+async function usersRequest(path, options = {}) {
+  const res = await authFetch(path, {
+    headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
+    ...options,
+  })
+  if (res.status === 204) return null
+  const data = await res.json()
+  if (!res.ok) throw new Error(data?.message || `Error ${res.status}`)
+  return data
+}
+
+export const usersApi = {
+  list:      ()         => usersRequest('/api/v1/users'),
+  listRoles: ()         => usersRequest('/api/v1/users/roles'),
+  create:    (payload)  => usersRequest('/api/v1/users',      { method: 'POST', body: JSON.stringify(payload) }),
+  update:    (id, data) => usersRequest(`/api/v1/users/${id}`, { method: 'PUT',  body: JSON.stringify(data) }),
+  remove:    (id)       => usersRequest(`/api/v1/users/${id}`, { method: 'DELETE' }),
+}

@@ -12,8 +12,9 @@ import LoginPage from './pages/LoginPage'
 
 // ── Contenido principal (todos los hooks aquí, sin returns condicionales previos) ──
 function AppContent() {
-  const { user, logout } = useAuth()
+  const { user, logout, hasPermission } = useAuth()
   const isAdminView = window.location.pathname.startsWith('/admin')
+  const canAccessAdmin = hasPermission('catalog.manage') || hasPermission('audit.view') || hasPermission('user.manage')
 
   const [trips, setTrips] = useState([])
   const [loading, setLoading] = useState(false)
@@ -107,7 +108,17 @@ function AppContent() {
     return driverTrips
   }, [trips, selectedWeek, selectedDriver, activeTab])
 
-  if (isAdminView) return <AdminSection />
+  if (isAdminView) {
+    if (!canAccessAdmin) return (
+      <div className="fullscreen-center" style={{ flexDirection: 'column', gap: 12 }}>
+        <div style={{ fontSize: 40 }}>🔒</div>
+        <div style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700, color: 'var(--ink-1)' }}>Acceso restringido</div>
+        <div style={{ fontSize: 13, color: 'var(--ink-4)' }}>No tienes permisos para acceder al panel de administración.</div>
+        <a href="/" style={{ marginTop: 8, fontSize: 13, color: 'var(--primary)', fontWeight: 600 }}>← Volver al módulo operativo</a>
+      </div>
+    )
+    return <AdminSection />
+  }
 
   return (
     <>
@@ -126,7 +137,7 @@ function AppContent() {
         )}
 
         <nav className="topbar-nav">
-          <a href="/admin" className="topbar-nav-link">Administración</a>
+          {canAccessAdmin && <a href="/admin" className="topbar-nav-link">Administración</a>}
           <span className="topbar-user">{user?.email}</span>
           <button className="topbar-logout" onClick={logout}>Salir</button>
         </nav>

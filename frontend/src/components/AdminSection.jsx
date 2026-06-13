@@ -1,13 +1,16 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { adminApi, uploadTabulador, activateTabuladorVersion, deactivateTabuladorVersion, deleteTabuladorVersion, listTabuladorVersiones } from '../api'
+import UsersTab from './Admin/UsersTab'
+import { useAuth } from '../auth/AuthContext'
 
-// ── Admin Tabs Config ────────────────────────────────────────────────────────
-const ADMIN_TABS_CFG = [
-  { id: 'unidades',  label: 'Unidades',  icon: '🚛', desc: 'Rendimiento por tractor' },
-  { id: 'rutas',     label: 'Rutas',     icon: '🗺️', desc: 'Distancias origen-destino' },
-  { id: 'keywords',  label: 'Keywords',  icon: '🏷️', desc: 'Palabras clave Pacífico' },
-  { id: 'tabulador', label: 'Tabulador', icon: '📋', desc: 'Tarifas de pago' },
-  { id: 'audit',     label: 'Audit',     icon: '📜', desc: 'Registro de actividad' },
+// Tab config con el permiso mínimo requerido para verla
+const ALL_ADMIN_TABS = [
+  { id: 'unidades',  label: 'Unidades',  icon: '🚛', desc: 'Rendimiento por tractor',       permission: 'catalog.manage' },
+  { id: 'rutas',     label: 'Rutas',     icon: '🗺️', desc: 'Distancias origen-destino',     permission: 'catalog.manage' },
+  { id: 'keywords',  label: 'Keywords',  icon: '🏷️', desc: 'Palabras clave Pacífico',       permission: 'catalog.manage' },
+  { id: 'tabulador', label: 'Tabulador', icon: '📋', desc: 'Tarifas de pago',               permission: 'catalog.manage' },
+  { id: 'audit',     label: 'Audit',     icon: '📜', desc: 'Registro de actividad',          permission: 'audit.view' },
+  { id: 'usuarios',  label: 'Usuarios',  icon: '👤', desc: 'Cuentas y permisos de acceso',  permission: 'user.manage' },
 ]
 
 // ── AdminFormModal ────────────────────────────────────────────────────────────
@@ -480,7 +483,9 @@ function AdminTable({ rows, tab, onToggle, onDelete, onEdit }) {
 
 // ── AdminSection ──────────────────────────────────────────────────────────────
 export default function AdminSection() {
-  const [tab, setTab]             = useState('unidades')
+  const { hasPermission } = useAuth()
+  const ADMIN_TABS_CFG = ALL_ADMIN_TABS.filter(t => hasPermission(t.permission))
+  const [tab, setTab]             = useState(() => ADMIN_TABS_CFG[0]?.id ?? 'audit')
   const [rows, setRows]           = useState([])
   const [versiones, setVersiones] = useState([])
   const [loading, setLoading]     = useState(false)
@@ -500,22 +505,24 @@ export default function AdminSection() {
   const [tabActivating, setTabActivating] = useState(false)
   const [tabCsvPreview, setTabCsvPreview] = useState(null) // { headers, rows, total, file }
 
-  const tabCfg = ADMIN_TABS_CFG.find(t => t.id === tab) || {}
+  // Si el tab activo ya no está disponible para este usuario, selecciona el primero disponible
+  const validTab = ADMIN_TABS_CFG.find(t => t.id === tab) ? tab : (ADMIN_TABS_CFG[0]?.id ?? 'audit')
+  const tabCfg = ADMIN_TABS_CFG.find(t => t.id === validTab) || {}
 
   const loadData = async () => {
     setLoading(true)
     setError('')
     try {
       let result
-      if (tab === 'unidades') result = await adminApi.listUnidades('')
-      if (tab === 'rutas') result = await adminApi.listRutas('')
-      if (tab === 'keywords') result = await adminApi.listKeywords('')
-      if (tab === 'tabulador') {
+      if (validTab === 'unidades') result = await adminApi.listUnidades('')
+      if (validTab === 'rutas') result = await adminApi.listRutas('')
+      if (validTab === 'keywords') result = await adminApi.listKeywords('')
+      if (validTab === 'tabulador') {
         result = await adminApi.listTabulador('include_inactive=1')
         const ver = await listTabuladorVersiones()
         setVersiones(ver.versiones ?? [])
       }
-      if (tab === 'audit') result = await adminApi.listAuditLogs('limit=200')
+      if (validTab === 'audit') result = await adminApi.listAuditLogs('limit=200')
       setRows(result?.data || [])
     } catch (err) {
       setError(err.message)
@@ -527,23 +534,23 @@ export default function AdminSection() {
 
   useEffect(() => {
     loadData()
-  }, [tab])
+  }, [validTab])
 
   const handleToggle = async row => {
     const nextActive = Number(row.is_active) === 1 ? 0 : 1
-    if (tab === 'unidades') await adminApi.updateUnidad(row.id, { is_active: nextActive })
-    if (tab === 'rutas') await adminApi.updateRuta(row.id, { is_active: nextActive })
-    if (tab === 'keywords') await adminApi.updateKeyword(row.id, { is_active: nextActive })
-    if (tab === 'tabulador') await adminApi.updateTabulador(row.id, { is_active: nextActive })
+    if (validTab === 'unidades') await adminApi.updateUnidad(row.id, { is_active: nextActive })
+    if (validTab === 'rutas') await adminApi.updateRuta(row.id, { is_active: nextActive })
+    if (validTab === 'keywords') await adminApi.updateKeyword(row.id, { is_active: nextActive })
+    if (validTab === 'tabulador') await adminApi.updateTabulador(row.id, { is_active: nextActive })
     await loadData()
   }
 
   const handleDelete = async row => {
     try {
-      if (tab === 'unidades') await adminApi.deleteUnidad(row.id)
-      if (tab === 'rutas') await adminApi.deleteRuta(row.id)
-      if (tab === 'keywords') await adminApi.deleteKeyword(row.id)
-      if (tab === 'tabulador') await adminApi.deleteTabulador(row.id)
+      if (validTab === 'unidades') await adminApi.deleteUnidad(row.id)
+      if (validTab === 'rutas') await adminApi.deleteRuta(row.id)
+      if (validTab === 'keywords') await adminApi.deleteKeyword(row.id)
+      if (validTab === 'tabulador') await adminApi.deleteTabulador(row.id)
       await loadData()
     } catch (err) {
       setError(`Error al borrar: ${err.message}`)
@@ -552,44 +559,44 @@ export default function AdminSection() {
 
   const handleEdit   = row => { setEdit(row); setModalMode('edit'); setModalOpen(true) }
   const handleCreate = ()  => { setEdit(null); setModalMode('create'); setModalOpen(true) }
-  
+
   const handleSave   = async formData => {
     setFormLoading(true)
     setError('')
     try {
       if (modalMode === 'create') {
         const payload = { ...formData, is_active: 1 }
-        if (tab === 'unidades') payload.yield_km_l = Number(payload.yield_km_l)
-        if (tab === 'rutas') payload.distancia_km = Number(payload.distancia_km)
-        if (tab === 'tabulador') {
+        if (validTab === 'unidades') payload.yield_km_l = Number(payload.yield_km_l)
+        if (validTab === 'rutas') payload.distancia_km = Number(payload.distancia_km)
+        if (validTab === 'tabulador') {
           payload.pago_operador = Number(payload.pago_operador)
           payload.version = Number(payload.version)
           payload.prioridad = Number(payload.prioridad)
         }
 
-        if (tab === 'unidades') await adminApi.createUnidad(payload)
-        if (tab === 'rutas') await adminApi.createRuta(payload)
-        if (tab === 'keywords') await adminApi.createKeyword(payload)
-        if (tab === 'tabulador') await adminApi.createTabulador(payload)
+        if (validTab === 'unidades') await adminApi.createUnidad(payload)
+        if (validTab === 'rutas') await adminApi.createRuta(payload)
+        if (validTab === 'keywords') await adminApi.createKeyword(payload)
+        if (validTab === 'tabulador') await adminApi.createTabulador(payload)
       } else {
         const id = editRecord.id
         const payload = { ...formData }
         delete payload.id; delete payload.created_at; delete payload.updated_at
 
-        if (tab === 'unidades') payload.yield_km_l = Number(payload.yield_km_l)
-        if (tab === 'rutas') payload.distancia_km = Number(payload.distancia_km)
-        if (tab === 'tabulador') {
+        if (validTab === 'unidades') payload.yield_km_l = Number(payload.yield_km_l)
+        if (validTab === 'rutas') payload.distancia_km = Number(payload.distancia_km)
+        if (validTab === 'tabulador') {
           payload.pago_operador = Number(payload.pago_operador)
           payload.version = Number(payload.version)
           payload.prioridad = Number(payload.prioridad)
         }
 
-        if (tab === 'unidades') await adminApi.updateUnidad(id, payload)
-        if (tab === 'rutas') await adminApi.updateRuta(id, payload)
-        if (tab === 'keywords') await adminApi.updateKeyword(id, payload)
-        if (tab === 'tabulador') await adminApi.updateTabulador(id, payload)
+        if (validTab === 'unidades') await adminApi.updateUnidad(id, payload)
+        if (validTab === 'rutas') await adminApi.updateRuta(id, payload)
+        if (validTab === 'keywords') await adminApi.updateKeyword(id, payload)
+        if (validTab === 'tabulador') await adminApi.updateTabulador(id, payload)
       }
-      
+
       setModalOpen(false)
       await loadData()
     } catch (err) {
@@ -669,8 +676,8 @@ export default function AdminSection() {
               { label:'Total Registros',  value: rows.length, mono: true },
               { label:'Activos',          value: activeCount, color:'oklch(80% .12 162)' },
               { label:'Inactivos',        value: inactiveCount, color:'rgba(255,255,255,.45)' },
-              ...(tab==='tabulador' ? [{ label:'Versión Activa', value: activeVersion ? `v${activeVersion.version}` : '—' }] : []),
-              { label:'Módulo Activo',    value: tabCfg.label || tab, tag: true },
+              ...(validTab==='tabulador' ? [{ label:'Versión Activa', value: activeVersion ? `v${activeVersion.version}` : '—' }] : []),
+              { label:'Módulo Activo',    value: tabCfg.label || validTab, tag: true },
             ].map((s, i) => (
               <div key={i} style={{
                 padding:'14px 18px',
@@ -709,9 +716,9 @@ export default function AdminSection() {
                 display:'flex', alignItems:'center', gap:7,
                 padding:'8px 16px', borderRadius:'var(--r)',
                 fontSize:13, fontWeight:600, cursor:'pointer', border:'none',
-                background: tab===t.id ? 'var(--primary)' : 'transparent',
-                color: tab===t.id ? 'white' : 'var(--ink-3)',
-                boxShadow: tab===t.id ? '0 2px 8px rgba(15,23,42,.20)' : 'none',
+                background: validTab===t.id ? 'var(--primary)' : 'transparent',
+                color: validTab===t.id ? 'white' : 'var(--ink-3)',
+                boxShadow: validTab===t.id ? '0 2px 8px rgba(15,23,42,.20)' : 'none',
                 transition:'all .15s',
               }}
             >
@@ -753,7 +760,7 @@ export default function AdminSection() {
                 }}>
                 ↻ Sincronizar
               </button>
-              {['unidades','rutas','keywords','tabulador'].includes(tab) && (
+              {['unidades','rutas','keywords','tabulador'].includes(validTab) && (
                 <button onClick={handleCreate} style={{
                   display:'flex', alignItems:'center', gap:6,
                   background:'var(--primary)', color:'white',
@@ -766,7 +773,9 @@ export default function AdminSection() {
           </div>
 
           <div style={{ padding:'24px' }}>
-            {tab === 'tabulador' && (
+            {validTab === 'usuarios' && <UsersTab />}
+
+            {validTab === 'tabulador' && (
               <div style={{ marginBottom:24, display:'flex', flexDirection:'column', gap:14 }}>
                 <div style={{
                   border:'2px dashed var(--border-md)', borderRadius:'var(--r-xl)',
@@ -887,22 +896,22 @@ export default function AdminSection() {
               </div>
             )}
 
-            {loading ? (
+            {validTab !== 'usuarios' && (loading ? (
               <div style={{ textAlign:'center', padding:'60px 0', color:'var(--ink-4)', fontStyle:'italic', fontSize:14 }}>
                 Sincronizando…
               </div>
             ) : (
               <AdminTable
-                rows={rows} tab={tab}
+                rows={rows} tab={validTab}
                 onToggle={handleToggle} onDelete={handleDelete} onEdit={handleEdit}
               />
-            )}
+            ))}
           </div>
         </div>
       </div>
 
       <AdminFormModal isOpen={modalOpen} onClose={()=>setModalOpen(false)}
-        mode={modalMode} tab={tab} data={editRecord} loading={formLoading} onSave={handleSave} />
+        mode={modalMode} tab={validTab} data={editRecord} loading={formLoading} onSave={handleSave} />
 
       {tabCsvPreview && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 500, background: 'rgba(15,23,42,.60)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }}>

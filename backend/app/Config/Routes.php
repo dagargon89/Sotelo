@@ -172,3 +172,25 @@ $routes->delete('api/v1/admin/tabulador/(:num)',
 $routes->get('api/v1/admin/audit-logs',
     'Admin\\AuditController::index',
     ['filter' => ['auth', 'permission:audit.view']]);
+
+// Gestión de usuarios — requieren user.manage
+// /roles debe ir ANTES de /(:num) para que no lo intercepte
+$routes->get('api/v1/users/roles',
+    'UsersController::listRoles',
+    ['filter' => ['auth', 'permission:user.manage']]);
+
+$routes->get('api/v1/users',
+    'UsersController::index',
+    ['filter' => ['auth', 'permission:user.manage']]);
+
+$routes->post('api/v1/users',
+    'UsersController::create',
+    ['filter' => ['auth', 'permission:user.manage']]);
+
+$routes->put('api/v1/users/(:num)',
+    'UsersController::update/$1',
+    ['filter' => ['auth', 'permission:user.manage']]);
+
+$routes->delete('api/v1/users/(:num)',
+    'UsersController::delete/$1',
+    ['filter' => ['auth', 'permission:user.manage']]);
