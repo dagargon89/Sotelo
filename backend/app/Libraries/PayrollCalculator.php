@@ -35,8 +35,9 @@ class PayrollCalculator
             $totalLitrosPago = 0.0;
 
             // ── Resolución de tarifa por tabulador ──────────────────────────
-            // Se acumulan los pagos de cruce por cada Row que tenga tarifa.
+            // El cruce se paga una sola vez por boleta (Ajuste 2: dedup).
             $totalPagoCruce   = 0.0;
+            $crucePagado      = false;
             $reglaAplicada    = null;
             $fuenteTarifa     = 'PAGO_BASE_LEGACY';
             $motivoSinTarifa  = null;
@@ -44,18 +45,21 @@ class PayrollCalculator
             $rowsSinTarifa    = 0;
 
             foreach ($trip['Rows'] as $row) {
-                $dieselAFavor  = (float) ($row['Diesel_A_Favor'] ?? 0);
-                $recarga       = (float) ($row['Recarga'] ?? 0);
                 $litrosAPago   = (float) ($row['Litros_A_Pago'] ?? 0);
                 $pagoKm        = (float) ($row['Pago_Por_Km'] ?? 0);
                 $kms           = (float) ($row['Kms'] ?? 0);
+                $recarga       = (float) ($row['Recarga'] ?? 0);
                 $tipoRow       = strtoupper(trim((string) ($row['Tipo'] ?? '')));
                 $cruceRow      = isset($row['Cruce']) && $row['Cruce'] !== '' ? (string) $row['Cruce'] : null;
                 $origenRow     = strtoupper(trim((string) ($row['Origen'] ?? ''))) ?: null;
                 $destinoRow    = strtoupper(trim((string) ($row['Destino'] ?? ''))) ?: null;
 
-                $totalIncentive  += 0.0;  // B-03: Diesel es manual-only — NO se suma al incentivo automáticamente.
-                // El campo Diesel_A_Favor del row es null (o un valor informativo) y se excluye del Total_Pay.
+                // Ajuste 1: Diésel a favor por viaje. Peso_Carga = $/L capturado por el operador.
+                // Si el operador no ingresó precio, $dieselAFavor queda en 0 (no se suma).
+                $precioDiesel  = (float) ($row['Peso_Carga'] ?? 0);
+                $dieselAFavor  = ($precioDiesel > 0 && $litrosAPago > 0) ? round($litrosAPago * $precioDiesel, 2) : 0.0;
+                $totalIncentive  += $dieselAFavor;
+
                 $totalRecarga    += $recarga;
                 $totalLitrosPago += $litrosAPago;
                 $totalKms        += $kms;
@@ -66,10 +70,13 @@ class PayrollCalculator
                     $tarifa = $this->tabuladorModel->getTarifa($tipoRow, $cruceRow, $origenRow, $destinoRow);
 
                     if ($tarifa !== null) {
-                        $totalPagoCruce += (float) ($tarifa['pago_operador'] ?? 0);
-                        $fuenteTarifa    = 'TABULADOR_BD';
+                        // Ajuste 2: pagar el cruce una sola vez por boleta.
+                        if (!$crucePagado) {
+                            $totalPagoCruce += (float) ($tarifa['pago_operador'] ?? 0);
+                            $crucePagado     = true;
+                        }
+                        $fuenteTarifa = 'TABULADOR_BD';
                         $rowsConTarifa++;
-                        // Conservar la regla más específica que se encontró
                         if ($reglaAplicada === null || ($tarifa['nivel_match'] ?? 99) < ($trip['_nivel_min'] ?? 99)) {
                             $reglaAplicada          = $tipoRow;
                             $trip['_nivel_min']     = $tarifa['nivel_match'] ?? 99;

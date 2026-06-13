@@ -8,6 +8,8 @@ class BoletaProcessor
     private array $unitYields;
     private RouteResolver $routeResolver;
     private PacificoDetector $pacificoDetector;
+    /** @var array<int, array<string, mixed>>|null */
+    private ?array $exclusionesCache = null;
 
     /** @param array<string, float> $unitYields */
     public function __construct(array $unitYields, RouteResolver $routeResolver, PacificoDetector $pacificoDetector)
@@ -15,6 +17,33 @@ class BoletaProcessor
         $this->unitYields = $unitYields;
         $this->routeResolver = $routeResolver;
         $this->pacificoDetector = $pacificoDetector;
+    }
+
+    /** @return array<int, array<string, mixed>> */
+    private function loadExclusiones(): array
+    {
+        if ($this->exclusionesCache === null) {
+            $model = new \App\Models\ExclusionPagoBaseModel();
+            $this->exclusionesCache = $model->getActiveExclusions();
+        }
+        return $this->exclusionesCache;
+    }
+
+    private function isExcluded(string $coordenada, string $origen, string $destino): bool
+    {
+        foreach ($this->loadExclusiones() as $ex) {
+            $val = strtoupper(trim((string) $ex['valor']));
+            if ($ex['tipo_match'] === 'COORDENADA') {
+                if (strtoupper(trim($coordenada)) === $val) {
+                    return true;
+                }
+            } else {
+                if (strtoupper(trim($origen)) === $val || strtoupper(trim($destino)) === $val) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     /** @param array<int, array<string, string>> $rows */
@@ -164,6 +193,11 @@ class BoletaProcessor
                     $legBasePay = $isLoaded ? round($kmsAdj * 0.30, 2) : round($kmsAdj * 0.15, 2);
                 } else {
                     $legBasePay = $isLoaded ? 110.00 : 55.00;
+                }
+                // Ajuste 3: TRI/GT (coordenada) y ZARAGOZA DTR/FLETES SOTELO (ruta) no generan pago base.
+                $coordenada = trim((string) ($row['Coordenada'] ?? ''));
+                if ($this->isExcluded($coordenada, $origin, $dest)) {
+                    $legBasePay = 0.0;
                 }
                 $basePay += $legBasePay;
 

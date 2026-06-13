@@ -109,6 +109,11 @@ export const adminApi = {
   deleteTabulador: (id) => adminRequest(`tabulador/${id}`, { method: 'DELETE' }),
 
   listAuditLogs: (params = '') => adminRequest(`audit-logs${params ? `?${params}` : ''}`),
+
+  listExclusiones:  (params = '') => adminRequest(`exclusiones${params ? `?${params}` : ''}`),
+  createExclusion:  (payload)     => adminRequest('exclusiones',      { method: 'POST', body: JSON.stringify(payload) }),
+  updateExclusion:  (id, payload) => adminRequest(`exclusiones/${id}`, { method: 'PUT',  body: JSON.stringify(payload) }),
+  deleteExclusion:  (id)          => adminRequest(`exclusiones/${id}`, { method: 'DELETE' }),
 }
 
 // ── Funciones del tabulador de tarifas (cruces) ─────────────────────────────

@@ -21,7 +21,7 @@ function AppContent() {
   const [catalogLoading, setCatalogLoading] = useState(true)
   const [unitYields, setUnitYields] = useState({})
   const [defaultYield, setDefaultYield] = useState(2.37341)
-  const [selectedWeek, setSelectedWeek] = useState(null)
+  const [dateRange, setDateRange] = useState(null) // { from: 'YYYY-MM-DD', to: 'YYYY-MM-DD' }
   const [activeTab, setActiveTab] = useState('ALL')
   const [dieselPrice, setDieselPrice] = useState(24.50)
   const [driverFilter, setDriverFilter] = useState('')
@@ -37,11 +37,15 @@ function AppContent() {
       .finally(() => setCatalogLoading(false))
   }, [])
 
-  const availableWeeks = useMemo(() => [...new Set(trips.map(t => t.Payroll_Week || 0))].filter(w => w > 0), [trips])
+  const availableDates = useMemo(() => {
+    const dates = trips.map(t => (t.Start_Date || '').substring(0, 10)).filter(d => d && d !== 'Desconocido')
+    if (dates.length === 0) return { min: null, max: null }
+    return { min: dates.reduce((a, b) => a < b ? a : b), max: dates.reduce((a, b) => a > b ? a : b) }
+  }, [trips])
 
   const handleFileUpload = async (file) => {
     setLoading(true)
-    setSelectedWeek(null)
+    setDateRange(null)
     setActiveTab('ALL')
     setDriverFilter('')
     setSelectedDriver(null)
@@ -69,9 +73,15 @@ function AppContent() {
     })
   }
 
+  const inRange = (trip) => {
+    if (!dateRange) return false
+    const d = (trip.Start_Date || '').substring(0, 10)
+    return d >= dateRange.from && d <= dateRange.to
+  }
+
   const groupedTrips = useMemo(() => {
     const map = new Map()
-    trips.filter(t => t.Payroll_Week === selectedWeek).forEach(t => {
+    trips.filter(inRange).forEach(t => {
       const d = t.Driver || 'Sin Nombre'
       if (!map.has(d)) map.set(d, [])
       map.get(d).push(t)
@@ -82,16 +92,16 @@ function AppContent() {
     if (activeTab === 'APPROVED')    entries = entries.filter(([, ts]) => ts.some(t => t.Status === 'APPROVED'))
     if (driverFilter) entries = entries.filter(([d]) => d.toLowerCase().includes(driverFilter.toLowerCase()))
     return entries.sort((a, b) => a[0].localeCompare(b[0]))
-  }, [trips, selectedWeek, activeTab, driverFilter])
+  }, [trips, dateRange, activeTab, driverFilter])
 
   const tabCounts = useMemo(() => {
-    const weekTrips = trips.filter(t => t.Payroll_Week === selectedWeek)
+    const weekTrips = trips.filter(inRange)
     return {
       ALL:         weekTrips.filter(t => t.Status === 'NEEDS_INPUT').length,
       NEEDS_INPUT: weekTrips.filter(t => t.Status === 'PENDING').length,
       APPROVED:    weekTrips.filter(t => t.Status === 'APPROVED').length,
     }
-  }, [trips, selectedWeek])
+  }, [trips, dateRange])
 
   useEffect(() => {
     if (selectedDriver && !groupedTrips.some(([d]) => d === selectedDriver)) {
@@ -101,12 +111,12 @@ function AppContent() {
 
   const currentDriverTrips = useMemo(() => {
     if (!selectedDriver) return []
-    let driverTrips = trips.filter(t => t.Payroll_Week === selectedWeek && (t.Driver || 'Sin Nombre') === selectedDriver)
+    let driverTrips = trips.filter(t => inRange(t) && (t.Driver || 'Sin Nombre') === selectedDriver)
     if (activeTab === 'ALL')         driverTrips = driverTrips.filter(t => t.Status === 'NEEDS_INPUT')
     if (activeTab === 'NEEDS_INPUT') driverTrips = driverTrips.filter(t => t.Status === 'PENDING')
     if (activeTab === 'APPROVED')    driverTrips = driverTrips.filter(t => t.Status === 'APPROVED')
     return driverTrips
-  }, [trips, selectedWeek, selectedDriver, activeTab])
+  }, [trips, dateRange, selectedDriver, activeTab])
 
   if (isAdminView) {
     if (!canAccessAdmin) return (
@@ -128,11 +138,11 @@ function AppContent() {
         <span className="topbar-tag">v1.1 · Control Financiero</span>
         <div className="topbar-spacer"></div>
 
-        {selectedWeek && (
+        {dateRange && (
           <div className="week-pill">
-            <span className="week-pill-label">Semana</span>
-            {selectedWeek}
-            <button className="week-pill-change" onClick={() => setSelectedWeek(null)}>Cambiar</button>
+            <span className="week-pill-label">Período</span>
+            {dateRange.from} → {dateRange.to}
+            <button className="week-pill-change" onClick={() => setDateRange(null)}>Cambiar</button>
           </div>
         )}
 
@@ -147,9 +157,9 @@ function AppContent() {
         <div className="fullscreen-center">
           <FileUpload onUpload={handleFileUpload} loading={loading} />
         </div>
-      ) : !selectedWeek ? (
+      ) : !dateRange ? (
         <div className="fullscreen-center">
-          <PeriodSelector weeks={availableWeeks} onSelect={setSelectedWeek} />
+          <PeriodSelector availableDates={availableDates} onSelect={setDateRange} />
         </div>
       ) : (
         <div className="app-shell">
@@ -161,7 +171,7 @@ function AppContent() {
             onTabChange={setActiveTab}
             search={driverFilter}
             onSearchChange={setDriverFilter}
-            selectedWeek={selectedWeek}
+            selectedWeek={dateRange ? `${dateRange.from} → ${dateRange.to}` : ''}
             tabCounts={tabCounts}
           />
           <div className="detail-panel">
@@ -193,10 +203,10 @@ function AppContent() {
 
       {catalogLoading && <div className="catalog-loading-toast">Cargando catalogos...</div>}
 
-      {selectedWeek && trips.length > 0 && (() => {
-        const weekTrips = trips.filter(t => t.Payroll_Week === selectedWeek)
+      {dateRange && trips.length > 0 && (() => {
+        const rangeTrips = trips.filter(inRange)
         const statusMap = { ALL: 'NEEDS_INPUT', NEEDS_INPUT: 'PENDING', APPROVED: 'APPROVED' }
-        return <SummaryBar trips={weekTrips.filter(t => t.Status === statusMap[activeTab])} selectedWeek={selectedWeek} />
+        return <SummaryBar trips={rangeTrips.filter(t => t.Status === statusMap[activeTab])} selectedWeek={`${dateRange.from} → ${dateRange.to}`} />
       })()}
     </>
   )

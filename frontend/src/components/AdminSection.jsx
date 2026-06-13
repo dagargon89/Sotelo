@@ -8,9 +8,10 @@ const ALL_ADMIN_TABS = [
   { id: 'unidades',  label: 'Unidades',  icon: '🚛', desc: 'Rendimiento por tractor',       permission: 'catalog.manage' },
   { id: 'rutas',     label: 'Rutas',     icon: '🗺️', desc: 'Distancias origen-destino',     permission: 'catalog.manage' },
   { id: 'keywords',  label: 'Keywords',  icon: '🏷️', desc: 'Palabras clave Pacífico',       permission: 'catalog.manage' },
-  { id: 'tabulador', label: 'Tabulador', icon: '📋', desc: 'Tarifas de pago',               permission: 'catalog.manage' },
-  { id: 'audit',     label: 'Audit',     icon: '📜', desc: 'Registro de actividad',          permission: 'audit.view' },
-  { id: 'usuarios',  label: 'Usuarios',  icon: '👤', desc: 'Cuentas y permisos de acceso',  permission: 'user.manage' },
+  { id: 'tabulador',   label: 'Tabulador',   icon: '📋', desc: 'Tarifas de pago',                     permission: 'catalog.manage' },
+  { id: 'exclusiones', label: 'Exclusiones', icon: '🚫', desc: 'Coordenadas y rutas sin pago base',   permission: 'catalog.manage' },
+  { id: 'audit',       label: 'Audit',       icon: '📜', desc: 'Registro de actividad',                permission: 'audit.view' },
+  { id: 'usuarios',    label: 'Usuarios',    icon: '👤', desc: 'Cuentas y permisos de acceso',         permission: 'user.manage' },
 ]
 
 // ── AdminFormModal ────────────────────────────────────────────────────────────
@@ -20,10 +21,11 @@ function AdminFormModal({ isOpen, onClose, mode, tab, data, onSave, loading }) {
   useEffect(() => {
     if (!isOpen) return
     if (mode === 'edit' && data) { setForm({ ...data }); return }
-    if (tab === 'unidades')  setForm({ tractor: '', yield_km_l: '' })
-    if (tab === 'rutas')     setForm({ origen_normalizado: '', destino_normalizado: '', distancia_km: '', region: 'GENERAL' })
-    if (tab === 'keywords')  setForm({ keyword: '' })
-    if (tab === 'tabulador') setForm({ tipo: '', cruce: '', origen: '', destino: '', pago_operador: '', version: 1, prioridad: 0 })
+    if (tab === 'unidades')    setForm({ tractor: '', yield_km_l: '' })
+    if (tab === 'rutas')       setForm({ origen_normalizado: '', destino_normalizado: '', distancia_km: '', region: 'GENERAL' })
+    if (tab === 'keywords')    setForm({ keyword: '' })
+    if (tab === 'tabulador')   setForm({ tipo: '', cruce: '', origen: '', destino: '', pago_operador: '', version: 1, prioridad: 0 })
+    if (tab === 'exclusiones') setForm({ valor: '', tipo_match: 'COORDENADA' })
   }, [isOpen, mode, data, tab])
 
   if (!isOpen) return null
@@ -120,6 +122,20 @@ function AdminFormModal({ isOpen, onClose, mode, tab, data, onSave, loading }) {
                 <input className="am-input" value={form.keyword||''} onChange={e=>set('keyword',e.target.value)} placeholder="Ej: PACIFICO" required />
               </div>
             )}
+
+            {tab === 'exclusiones' && (<>
+              <div className="am-field">
+                <label className="am-label">Valor</label>
+                <input className="am-input" value={form.valor||''} onChange={e=>set('valor',e.target.value.toUpperCase())} placeholder="Ej: TRI, GT, ZARAGOZA DTR" required />
+              </div>
+              <div className="am-field">
+                <label className="am-label">Tipo de coincidencia</label>
+                <select className="am-select" value={form.tipo_match||'COORDENADA'} onChange={e=>set('tipo_match',e.target.value)}>
+                  <option value="COORDENADA">COORDENADA — columna Coordenada del CSV</option>
+                  <option value="RUTA">RUTA — Origen o Destino del movimiento</option>
+                </select>
+              </div>
+            </>)}
 
             {tab === 'tabulador' && (
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14 }}>
@@ -265,7 +281,7 @@ function AdminTable({ rows, tab, onToggle, onDelete, onEdit }) {
   useEffect(() => setPage(1), [search, tab])
   const toggleSort = k => setSort(p => p.key===k ? { key:k, dir:p.dir==='asc'?'desc':'asc' } : { key:k, dir:'asc' })
 
-  const hasActions = ['unidades','rutas','keywords','tabulador'].includes(tab)
+  const hasActions = ['unidades','rutas','keywords','tabulador','exclusiones'].includes(tab)
 
   // Column config per tab
   const colCfg = {
@@ -297,6 +313,12 @@ function AdminTable({ rows, tab, onToggle, onDelete, onEdit }) {
       { key: 'pago_operador', label: 'Pago',   mono: true, fmt: v => `$${Number(v).toFixed(2)}`, color: 'var(--emerald)' },
       { key: 'version',       label: 'Ver.',   mono: true },
       { key: 'is_active',     label: 'Estado', badge: true },
+    ],
+    exclusiones: [
+      { key: 'id',         label: '#',      w: 50, mono: true },
+      { key: 'valor',      label: 'Valor',  mono: true },
+      { key: 'tipo_match', label: 'Tipo',   tag: true },
+      { key: 'is_active',  label: 'Estado', badge: true },
     ],
     audit: [
       { key: 'id',          label: '#',        w: 50, mono: true },
@@ -514,9 +536,10 @@ export default function AdminSection() {
     setError('')
     try {
       let result
-      if (validTab === 'unidades') result = await adminApi.listUnidades('')
-      if (validTab === 'rutas') result = await adminApi.listRutas('')
-      if (validTab === 'keywords') result = await adminApi.listKeywords('')
+      if (validTab === 'unidades')    result = await adminApi.listUnidades('')
+      if (validTab === 'rutas')       result = await adminApi.listRutas('')
+      if (validTab === 'keywords')    result = await adminApi.listKeywords('')
+      if (validTab === 'exclusiones') result = await adminApi.listExclusiones('include_inactive=1')
       if (validTab === 'tabulador') {
         result = await adminApi.listTabulador('include_inactive=1')
         const ver = await listTabuladorVersiones()
@@ -538,19 +561,21 @@ export default function AdminSection() {
 
   const handleToggle = async row => {
     const nextActive = Number(row.is_active) === 1 ? 0 : 1
-    if (validTab === 'unidades') await adminApi.updateUnidad(row.id, { is_active: nextActive })
-    if (validTab === 'rutas') await adminApi.updateRuta(row.id, { is_active: nextActive })
-    if (validTab === 'keywords') await adminApi.updateKeyword(row.id, { is_active: nextActive })
-    if (validTab === 'tabulador') await adminApi.updateTabulador(row.id, { is_active: nextActive })
+    if (validTab === 'unidades')    await adminApi.updateUnidad(row.id, { is_active: nextActive })
+    if (validTab === 'rutas')       await adminApi.updateRuta(row.id, { is_active: nextActive })
+    if (validTab === 'keywords')    await adminApi.updateKeyword(row.id, { is_active: nextActive })
+    if (validTab === 'tabulador')   await adminApi.updateTabulador(row.id, { is_active: nextActive })
+    if (validTab === 'exclusiones') await adminApi.updateExclusion(row.id, { is_active: nextActive })
     await loadData()
   }
 
   const handleDelete = async row => {
     try {
-      if (validTab === 'unidades') await adminApi.deleteUnidad(row.id)
-      if (validTab === 'rutas') await adminApi.deleteRuta(row.id)
-      if (validTab === 'keywords') await adminApi.deleteKeyword(row.id)
-      if (validTab === 'tabulador') await adminApi.deleteTabulador(row.id)
+      if (validTab === 'unidades')    await adminApi.deleteUnidad(row.id)
+      if (validTab === 'rutas')       await adminApi.deleteRuta(row.id)
+      if (validTab === 'keywords')    await adminApi.deleteKeyword(row.id)
+      if (validTab === 'tabulador')   await adminApi.deleteTabulador(row.id)
+      if (validTab === 'exclusiones') await adminApi.deleteExclusion(row.id)
       await loadData()
     } catch (err) {
       setError(`Error al borrar: ${err.message}`)
@@ -574,10 +599,11 @@ export default function AdminSection() {
           payload.prioridad = Number(payload.prioridad)
         }
 
-        if (validTab === 'unidades') await adminApi.createUnidad(payload)
-        if (validTab === 'rutas') await adminApi.createRuta(payload)
-        if (validTab === 'keywords') await adminApi.createKeyword(payload)
-        if (validTab === 'tabulador') await adminApi.createTabulador(payload)
+        if (validTab === 'unidades')    await adminApi.createUnidad(payload)
+        if (validTab === 'rutas')       await adminApi.createRuta(payload)
+        if (validTab === 'keywords')    await adminApi.createKeyword(payload)
+        if (validTab === 'tabulador')   await adminApi.createTabulador(payload)
+        if (validTab === 'exclusiones') await adminApi.createExclusion(payload)
       } else {
         const id = editRecord.id
         const payload = { ...formData }
@@ -591,10 +617,11 @@ export default function AdminSection() {
           payload.prioridad = Number(payload.prioridad)
         }
 
-        if (validTab === 'unidades') await adminApi.updateUnidad(id, payload)
-        if (validTab === 'rutas') await adminApi.updateRuta(id, payload)
-        if (validTab === 'keywords') await adminApi.updateKeyword(id, payload)
-        if (validTab === 'tabulador') await adminApi.updateTabulador(id, payload)
+        if (validTab === 'unidades')    await adminApi.updateUnidad(id, payload)
+        if (validTab === 'rutas')       await adminApi.updateRuta(id, payload)
+        if (validTab === 'keywords')    await adminApi.updateKeyword(id, payload)
+        if (validTab === 'tabulador')   await adminApi.updateTabulador(id, payload)
+        if (validTab === 'exclusiones') await adminApi.updateExclusion(id, payload)
       }
 
       setModalOpen(false)
@@ -760,7 +787,7 @@ export default function AdminSection() {
                 }}>
                 ↻ Sincronizar
               </button>
-              {['unidades','rutas','keywords','tabulador'].includes(validTab) && (
+              {['unidades','rutas','keywords','tabulador','exclusiones'].includes(validTab) && (
                 <button onClick={handleCreate} style={{
                   display:'flex', alignItems:'center', gap:6,
                   background:'var(--primary)', color:'white',

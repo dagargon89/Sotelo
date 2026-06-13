@@ -96,8 +96,8 @@ function RouteStep({ row, index, total, isExpanded, onToggle, onFieldChange, dp,
               <input className="sdf-input amber" type="number" step="0.01" value={row.Recarga || ''} onChange={e => onFieldChange('Recarga', parseFloat(e.target.value) || 0)} />
             </div>
             <div className="sdf-group">
-              <label className="sdf-label edit">Peso Carga</label>
-              <input className="sdf-input amber" type="number" value={row.Peso_Carga || ''} onChange={e => onFieldChange('Peso_Carga', parseFloat(e.target.value) || 0)} />
+              <label className="sdf-label edit">Diésel $/L</label>
+              <input className="sdf-input amber" type="number" step="0.01" placeholder="Precio $/L" value={row.Peso_Carga || ''} onChange={e => onFieldChange('Peso_Carga', parseFloat(e.target.value) || 0)} />
             </div>
             <div className="sdf-group">
               <label className="sdf-label edit">Tipo</label>
@@ -191,21 +191,21 @@ function BoletaDetail({ trip, onUpdate, dieselPrice, unitYields, defaultYield })
     let bonos = 0
     if (trip.Is_Pacifico) {
         if (bonoSierra) bonos += 500
-        if (bonoDoble) bonos += 1726
+        if (bonoDoble) bonos += 2439
         bonos += (parseInt(estObregon) || 0) * 600
         bonos += (parseInt(estMochis) || 0) * 300
     }
 
     const pagoCruceVal = parseFloat(trip.Pago_Cruce) || 0
     const incentivePay = quimico + bonos + pagoCruceVal
-    const basePay = parseFloat(trip.Base_Pay) || 0
     const updatedRows = (trip.Rows || []).map((or, i) => ({ ...or, ...currentRowsData[i] }))
 
+    // ADR-003: Total_Pay lo calcula el backend. Aquí solo actualizamos Incentive_Pay para
+    // visualización en tiempo real; el Total_Pay definitivo llega en el response de /api/calculate.
     onUpdate({
         ...trip,
         Rows: updatedRows,
         Incentive_Pay: parseFloat(incentivePay.toFixed(2)),
-        Total_Pay: parseFloat((basePay + incentivePay).toFixed(2)),
     })
   }
 
@@ -301,7 +301,7 @@ function BoletaDetail({ trip, onUpdate, dieselPrice, unitYields, defaultYield })
   let pacificoBonosVal = 0
   if (trip.Is_Pacifico) {
       if (bonoSierra) pacificoBonosVal += 500
-      if (bonoDoble) pacificoBonosVal += 1726
+      if (bonoDoble) pacificoBonosVal += 2439
       pacificoBonosVal += (parseInt(estObregon) || 0) * 600
       pacificoBonosVal += (parseInt(estMochis) || 0) * 300
   }
@@ -363,7 +363,12 @@ function BoletaDetail({ trip, onUpdate, dieselPrice, unitYields, defaultYield })
           {trip.Is_Pacifico && (
             <>
               <PillToggle checked={bonoSierra} onChange={setBonoSierra} label="Sierra" amount="+$500" />
-              <PillToggle checked={bonoDoble}  onChange={setBonoDoble} label="Doble"  amount="+$1,726" />
+              <PillToggle checked={bonoDoble}  onChange={setBonoDoble} label="Doble"  amount="+$2,439" />
+              {bonoDoble && (
+                <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 9px', borderRadius: 20, background: 'oklch(96% .06 85)', color: 'oklch(45% .12 75)', border: '1px solid oklch(88% .10 85)' }}>
+                  ⚠ $2,439 · pendiente conf. Obregón
+                </span>
+              )}
               <StepperPill value={estObregon} onChange={setEstObregon} label="Estancia Obregón" amount="+$600/cu" />
               <StepperPill value={estMochis} onChange={setEstMochis} label="Estancia Mochis"  amount="+$300/cu" />
             </>

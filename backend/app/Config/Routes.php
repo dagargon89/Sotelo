@@ -173,6 +173,23 @@ $routes->get('api/v1/admin/audit-logs',
     'Admin\\AuditController::index',
     ['filter' => ['auth', 'permission:audit.view']]);
 
+// Exclusiones de pago base — catalog.manage
+$routes->get('api/v1/admin/exclusiones',
+    'Admin\\ExclusionesController::index',
+    ['filter' => ['auth', 'permission:catalog.view']]);
+
+$routes->post('api/v1/admin/exclusiones',
+    'Admin\\ExclusionesController::create',
+    ['filter' => ['auth', 'permission:catalog.manage']]);
+
+$routes->put('api/v1/admin/exclusiones/(:num)',
+    'Admin\\ExclusionesController::update/$1',
+    ['filter' => ['auth', 'permission:catalog.manage']]);
+
+$routes->delete('api/v1/admin/exclusiones/(:num)',
+    'Admin\\ExclusionesController::delete/$1',
+    ['filter' => ['auth', 'permission:catalog.manage']]);
+
 // Gestión de usuarios — requieren user.manage
 // /roles debe ir ANTES de /(:num) para que no lo intercepte
 $routes->get('api/v1/users/roles',
