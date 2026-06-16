@@ -8,7 +8,7 @@ export default function DashboardKPIs({ trips, dieselPrice, onDieselPriceChange 
     let dataErrorCount = 0
 
     trips.forEach(t => {
-      totalPay += (t.Base_Pay || 0) + (t.Incentive_Pay || 0)
+      totalPay += (t.Total_Pay || 0)
       if (t.Total_Kms_Paid === 0 || t.Total_Kms_Raw === 0) dataErrorCount++
     })
 
